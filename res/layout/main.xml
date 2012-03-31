@@ -4,8 +4,15 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
+    <EditText
+        android:id="@+id/fileFilterEdit"
+        android:layout_width="match_parent" 
+        android:layout_height="wrap_content"
+        android:singleLine="true" 
+        />
     <ListView
         android:id="@+id/fileListView"
+        android:choiceMode="multipleChoice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
     </ListView>
