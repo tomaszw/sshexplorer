@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, SSHExplorerActivity!</string>
+    <string name="app_name">Sshexplorer</string>
+
+</resources>
