@@ -43,8 +43,8 @@ public class SSHExplorerActivity extends Activity {
     private ListView m_fileListView;
     private EditText m_fileFilterEdit;
     private FileSystem m_fs;
+    private String m_currentPath;
     private Session m_session;
-    
 
     /** Called when the activity is first created. */
     @Override
@@ -55,45 +55,85 @@ public class SSHExplorerActivity extends Activity {
         setContentView(R.layout.main);
         m_fileFilterEdit = (EditText) findViewById(R.id.fileFilterEdit);
         m_fileFilterEdit.addTextChangedListener(new TextWatcher() {
-            
+
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                FileListAdapter adapter = (FileListAdapter)m_fileListView.getAdapter();
+            public void onTextChanged(CharSequence s, int start, int before,
+                    int count) {
+                FileListAdapter adapter = (FileListAdapter) m_fileListView
+                        .getAdapter();
                 if (adapter != null) {
                     Log.d(TAG, "setting filter " + s);
                     adapter.pattern(s);
                 }
-                
+
             }
-            
+
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count,
                     int after) {
-                
+
             }
-            
+
             @Override
             public void afterTextChanged(Editable s) {
             }
         });
-        
+
         m_fileListView = (ListView) findViewById(R.id.fileListView);
         m_fileListView
                 .setOnItemLongClickListener(new ListView.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClick(AdapterView<?> parent,
                             View view, int position, long id) {
-                        // TODO Auto-generated method stub
-                        LsEntry e = (LsEntry) m_fileListView.getAdapter()
-                                .getItem(position);
-                        if (!e.getAttrs().isDir()) {
-                            download(e);
-                        }
+                        doItemLongClick(position);
                         return false;
                     }
                 });
+        m_fileListView.setOnItemSelectedListener(new ListView.OnItemSelectedListener() {
 
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View arg1,
+                    int arg2, long arg3) {
+                // TODO Auto-generated method stub
+                doItemSelected(arg2);
+                
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        m_fileListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1, int position,
+                    long arg3) {
+                doItemClick(position);
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        
         startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
+    }
+
+    private void doItemClick(int position) {
+        Log.d(TAG, "click " + position);
+    }
+    
+    private void doItemSelected(int position) {
+        Log.d(TAG, "selected " + position);
+    }
+    
+    private void doItemLongClick(int position) {
+        // TODO Auto-generated method stub
+        FileEntry e = (FileEntry) m_fileListView.getAdapter()
+                .getItem(position);
+        if (!e.dir) {
+            download(e);
+        }
     }
 
     @Override
@@ -125,17 +165,12 @@ public class SSHExplorerActivity extends Activity {
         });
     }
 
-    private void sftp(ChannelSftp c) {
-        new LsTask(c, ".").execute(null);
-    }
-
-    private void download(LsEntry e) {
-        new DownloadTask(m_session, e).execute(null);
+    private void download(FileEntry e) {
+        new DownloadTask(e).execute(null);
     }
 
     class LoginTask extends AsyncTask<Void, Void, Void> {
         private Login m_data;
-        private ChannelSftp m_sftpChannel;
         private ProgressDialog m_progress;
 
         public LoginTask(Login data) {
@@ -188,10 +223,8 @@ public class SSHExplorerActivity extends Activity {
                 });
                 Log.d(TAG, "establishing session");
                 m_session.connect();
-                Channel channel = m_session.openChannel("sftp");
-                channel.connect();
-                m_sftpChannel = (ChannelSftp) channel;
-                Log.d(TAG, "connected!");
+                m_currentPath = "";
+                m_fs = new SSHFileSystem(m_session);
             } catch (JSchException e) {
                 e.printStackTrace();
                 error(e.getMessage());
@@ -211,40 +244,27 @@ public class SSHExplorerActivity extends Activity {
         @Override
         protected void onPostExecute(Void result) {
             m_progress.dismiss();
-            sftp(m_sftpChannel);
+            new LsTask(m_currentPath).execute(null);
         }
     }
 
-    class LsTask extends AsyncTask<Void, Integer, List<LsEntry>> {
-        private ChannelSftp m_channel;
+    class LsTask extends AsyncTask<Void, Integer, List<FileEntry>> {
         private String m_path;
         private ProgressDialog m_progress;
 
-        public LsTask(ChannelSftp c, String path) {
-            m_channel = c;
+        public LsTask(String path) {
             m_path = path;
         }
 
         @Override
-        protected List<LsEntry> doInBackground(Void... params) {
-            // TODO Auto-generated method stub
-            ArrayList<LsEntry> values = new ArrayList<LsEntry>();
+        protected List<FileEntry> doInBackground(Void... params) {
             try {
-                Vector v = m_channel.ls(".");
-                Log.d(TAG, "received file list");
-                for (Object o : v) {
-                    if (o instanceof LsEntry) {
-                        LsEntry e = (LsEntry) o;
-                        values.add(e);
-                    }
-                }
-            } catch (SftpException e) {
-                // TODO Auto-generated catch block
+                return m_fs.entries(m_path);
+            } catch (IOException e) {
                 e.printStackTrace();
                 error(e.getMessage());
+                return new ArrayList<FileEntry>();
             }
-            // Collections.sort(values, new FileListComparator());
-            return values;
         }
 
         @Override
@@ -257,174 +277,69 @@ public class SSHExplorerActivity extends Activity {
         }
 
         @Override
-        protected void onPostExecute(List<LsEntry> values) {
+        protected void onPostExecute(List<FileEntry> values) {
             m_progress.dismiss();
             FileListAdapter adapter = new FileListAdapter(
                     SSHExplorerActivity.this, values);
             m_fileListView.setAdapter(adapter);
             m_fileFilterEdit.setText("");
-            
-        }
-    }
 
-    static int checkAck(InputStream in) throws IOException {
-        int b = in.read();
-        // b may be 0 for success,
-        // 1 for error,
-        // 2 for fatal error,
-        // -1
-        if (b == 0)
-            return b;
-        if (b == -1)
-            return b;
-
-        if (b == 1 || b == 2) {
-            StringBuffer sb = new StringBuffer();
-            int c;
-            do {
-                c = in.read();
-                sb.append((char) c);
-            } while (c != '\n');
-            if (b == 1) { // error
-                System.out.print(sb.toString());
-            }
-            if (b == 2) { // fatal error
-                System.out.print(sb.toString());
-            }
         }
-        return b;
     }
 
     class DownloadTask extends AsyncTask<Void, Double, Void> {
-        private LsEntry m_entry;
+        private FileEntry m_entry;
 
-        public DownloadTask(Session s, LsEntry e) {
-            m_session = s;
+        public DownloadTask(FileEntry e) {
             m_entry = e;
         }
 
         @Override
         protected Void doInBackground(Void... params) {
             // TODO Auto-generated method stub
-            if (!scpFrom(
-                    m_session,
-                    m_entry.getFilename(),
-                    new File(Environment.getExternalStorageDirectory(), m_entry
-                            .getFilename()).getAbsolutePath())) {
-                error("Transfer error");
+            try {
+                scpFrom(m_entry.fullname(),
+                        new File(Environment.getExternalStorageDirectory(),
+                                m_entry.name).getAbsolutePath());
+            } catch (IOException e) {
+                error("Transfer error: " + e.getMessage());
             }
             return null;
         }
 
-        private boolean scpFrom(Session session, String srcPath, String dstPath) {
-            try {
-                Log.d(TAG, "scp from " + srcPath + " to " + dstPath);
-                ChannelExec channel = (ChannelExec) session.openChannel("exec");
-                channel.setCommand("scp -f " + srcPath);
-                OutputStream out = channel.getOutputStream();
-                InputStream in = channel.getInputStream();
-                channel.connect();
-                try {
-
-                    Log.d(TAG, "connected");
-                        
-                    byte[] buf = new byte[4096];
-                    // send '\0'
-                    buf[0] = 0;
-                    out.write(buf, 0, 1);
-                    out.flush();
-
-                    int c = checkAck(in);
-                    if (c != 'C') {
-                        Log.e(TAG, "bad ack");
-                        return false;
-                    }
-                    
-                    // read '0644 '
-                    if (readN(in, buf, 0, 5) < 0) {
-                        return false;
-                    }
-
-                    long filesize = 0L;
-                    while (true) {
-                        if (in.read(buf, 0, 1) < 0) {
-                            // error
-                            return false;
-                        }
-                        if (buf[0] == ' ')
-                            break;
-                        filesize = filesize * 10L + (long) (buf[0] - '0');
-                    }
-
-                    String file = null;
-                    for (int i = 0;; i++) {
-                        if (in.read(buf, i, 1) < 0) {
-                            return false;
-                        }
-                        if (buf[i] == (byte) 0x0a) {
-                            file = new String(buf, 0, i);
-                            break;
-                        }
-                    }
-
-                    Log.d(TAG, "starting copy");
-                    publishProgress((double) 0);
-
-                    // send '\0'
-                    buf[0] = 0;
-                    out.write(buf, 0, 1);
-                    out.flush();
-                    // read a content of lfile
-                    Log.d(TAG, "file-size = " + filesize);
-                    FileOutputStream fos = new FileOutputStream(dstPath);
-                    try {
-                        int r;
-                        long total_read = 0;
-                        long total_filesize = filesize;
-
-                        while (true) {
-                            if (buf.length < filesize)
-                                r = buf.length;
-                            else
-                                r = (int) filesize;
-                            r = in.read(buf, 0, r);
-                            if (r < 0) {
-                                error("transfer error " + r);
-                                // error
-                                break;
-                            }
-                            fos.write(buf, 0, r);
-                            filesize -= r;
-                            total_read += r;
-                            if (total_filesize != 0) {
-                                publishProgress((double) total_read
-                                        / (double) total_filesize);
-                            }
-                            Log.d(TAG, "read " + total_read + " bytes");
-                            if (filesize == 0L)
-                                break;
-                        }
-                    } finally {
-                        fos.close();
-                        fos = null;
-                    }
-                    if (checkAck(in) != 0) {
-                        Log.e(TAG, "bad ack");
-                        return false;
-                    }
-
-                    // send '\0'
-                    buf[0] = 0;
-                    out.write(buf, 0, 1);
-                    out.flush();
-                } finally {
-                    channel.disconnect();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+        private void scpFrom(String srcPath, String dstPath) throws IOException {
+            long totalSize = m_entry.size;
+            InputStream in = m_fs.input(srcPath);
+            /* better size estimate if supported */
+            if (in instanceof KnownSize) {
+                totalSize = ((KnownSize) in).knownSize();
             }
-            return true;
+
+            byte[] buf = new byte[4096];
+            publishProgress((double) 0);
+
+            FileOutputStream fos = new FileOutputStream(dstPath);
+            long totalRead = 0;
+            try {
+                for (;;) {
+                    int r = in.read(buf);
+                    if (r < 0) {
+                        break;
+                    }
+                    totalRead += r;
+                    fos.write(buf, 0, r);
+                    if (totalSize != 0) {
+                        publishProgress((double) totalRead / (double) totalSize);
+                    }
+                }
+            } finally {
+                fos.close();
+                fos = null;
+            }
+            if (totalRead < totalSize) {
+                Log.e(TAG, "only " + totalRead + " bytes read out of "
+                        + totalSize);
+            }
         }
 
         @Override
@@ -432,35 +347,5 @@ public class SSHExplorerActivity extends Activity {
             // TODO Auto-generated method stub
             setProgress((int) Math.round(values[0] * 10000));
         }
-    }
-
-    private static String readLine(InputStream in, int maxLen) throws IOException {
-        StringBuffer b = new StringBuffer();
-        int r = 0;
-        while (r < maxLen) {
-            int ch = in.read();
-            if (ch < 0 || ch == 10) break;
-            b.append((char)ch);
-            ++r;
-        }
-        if (b.length() > 0) {
-            if (b.charAt(b.length()-1) == 14) {
-                b.deleteCharAt(b.length()-1);
-            }
-        }
-        return b.toString();
-    }
-    
-    private static int readN(InputStream in, byte[] buf, int off, int sz)
-            throws IOException {
-        int orgSz = sz;
-        while (sz > 0) {
-            int r = in.read(buf, off, sz);
-            if (r < 0)
-                return r;
-            sz -= r;
-            off += r;
-        }
-        return orgSz;
     }
 }

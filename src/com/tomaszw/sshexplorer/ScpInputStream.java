@@ -82,7 +82,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
 
     private static Header readHeader(InputStream in, OutputStream out)
             throws IOException {
-        byte buf[] = new byte[1];
+        byte buf[] = new byte[256];
         // send '\0'
         buf[0] = 0;
         out.write(buf, 0, 1);

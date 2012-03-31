@@ -1,6 +1,7 @@
 package com.tomaszw.sshexplorer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import android.content.Context;
@@ -12,14 +13,15 @@ import android.widget.CheckedTextView;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
-public class FileListAdapter extends ArrayAdapter<LsEntry> {
-    private List<LsEntry> m_values;
+public class FileListAdapter extends ArrayAdapter<FileEntry> {
+    private List<FileEntry> m_values;
     private List<Integer> m_filtered;
     private Context m_context;
 
-    public FileListAdapter(Context c, List<LsEntry> values) {
+    public FileListAdapter(Context c, List<FileEntry> values) {
         super(c, android.R.layout.simple_list_item_checked, android.R.id.text1);
-        m_values = values;
+        m_values = new ArrayList<FileEntry>(values);
+        Collections.sort(m_values, new FileEntryComparator());
         m_context = c;
         m_filtered = new ArrayList<Integer>();
         for (int i = 0; i < m_values.size(); ++i) {
@@ -36,7 +38,7 @@ public class FileListAdapter extends ArrayAdapter<LsEntry> {
         String p = pat.toString().toLowerCase();
         List<Integer> f = new ArrayList<Integer>();
         for (int i = 0; i < m_values.size(); ++i) {
-            if (m_values.get(i).getFilename().toLowerCase().contains(p))
+            if (m_values.get(i).name.toLowerCase().contains(p))
                 f.add(i);
         }
         m_filtered = f;
@@ -44,7 +46,7 @@ public class FileListAdapter extends ArrayAdapter<LsEntry> {
     }
     
     @Override
-    public LsEntry getItem(int position) {
+    public FileEntry getItem(int position) {
         // TODO Auto-generated method stub
         return m_values.get(m_filtered.get(position));
     }
@@ -53,12 +55,13 @@ public class FileListAdapter extends ArrayAdapter<LsEntry> {
     public View getView(int position, View convertView, ViewGroup parent) {
         // TODO Auto-generated method stub
         CheckedTextView v = new CheckedTextView(m_context);
-        LsEntry e = getItem(position);
-        v.setText(e.getFilename());
-        if (e.getAttrs().isDir()) {
+        v.setFocusable(false);
+        FileEntry e = getItem(position);
+        v.setText(e.name);
+        if (e.dir) {
             v.setTextColor(Color.BLUE);
         } else {
-            int p = e.getAttrs().getPermissions();
+            int p = e.perms;
             if ((p & 0111) != 0) {
                 v.setTextColor(Color.GREEN);
             }
