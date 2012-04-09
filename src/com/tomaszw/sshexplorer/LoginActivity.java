@@ -8,6 +8,8 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.jcraft.jsch.Session;
+
 public class LoginActivity extends Activity implements OnClickListener {
 	private EditText m_editHost;
 	private EditText m_editUser;

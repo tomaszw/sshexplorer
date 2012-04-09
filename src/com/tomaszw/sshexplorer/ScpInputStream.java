@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import android.util.Log;
+
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -16,6 +18,8 @@ public class ScpInputStream extends InputStream implements KnownSize {
     private Header m_header;
     private byte[] m_ch;
     private int m_phase = 0;
+    private long m_totalRead = 0;
+    private String m_path;
 
     public static class Header {
         public long sz;
@@ -23,6 +27,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
 
     public ScpInputStream(Session s, String path) throws IOException {
         m_session = s;
+        m_path = path;
         try {
             m_channel = (ChannelExec) m_session.openChannel("exec");
             m_channel.setCommand("scp -f " + path);
@@ -56,13 +61,36 @@ public class ScpInputStream extends InputStream implements KnownSize {
     public int read(byte[] buffer, int offset, int length) throws IOException {
         assertHeader();
         if (m_phase == 0) {
-            m_ch[0] = 0;
-            m_out.write(m_ch, 0, 1);
-            m_out.flush();
+            send0();
             ++m_phase;
         }
+        if (length > m_header.sz - m_totalRead) {
+            length = (int) (m_header.sz - m_totalRead);
+        }
         int r = m_in.read(buffer, offset, length);
+        if (r > 0) {
+            m_totalRead += r;
+            if (m_totalRead >= m_header.sz) {
+                // past end
+                if (0 == checkAck(m_in)) {
+                    send0();
+                    // all ok
+                }
+
+                ++m_phase;
+            }
+        } else if (r < 0) {
+            // error
+            checkAck(m_in);
+            send0();
+        }
         return r;
+    }
+
+    private void send0() throws IOException {
+        m_ch[0] = 0;
+        m_out.write(m_ch, 0, 1);
+        m_out.flush();
     }
 
     public long knownSize() {
@@ -80,7 +108,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
         m_header = readHeader(m_in, m_out);
     }
 
-    private static Header readHeader(InputStream in, OutputStream out)
+    private Header readHeader(InputStream in, OutputStream out)
             throws IOException {
         byte buf[] = new byte[256];
         // send '\0'
@@ -123,7 +151,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
         return h;
     }
 
-    private static int checkAck(InputStream in) throws IOException {
+    private int checkAck(InputStream in) throws IOException {
         int b = in.read();
         // b may be 0 for success,
         // 1 for error,
@@ -142,11 +170,14 @@ public class ScpInputStream extends InputStream implements KnownSize {
                 sb.append((char) c);
             } while (c != '\n');
             if (b == 1) { // error
-                System.out.print(sb.toString());
+                throw new IOException(sb.toString());
             }
             if (b == 2) { // fatal error
-                System.out.print(sb.toString());
+                throw new IOException(sb.toString());
             }
+        }
+        if (b != 0) {
+            Log.e(SSHExplorerActivity.TAG, m_path + " ack=" + b);
         }
         return b;
     }

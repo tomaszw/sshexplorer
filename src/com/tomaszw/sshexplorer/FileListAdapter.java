@@ -6,10 +6,14 @@ import java.util.List;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.CheckedTextView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
@@ -44,19 +48,36 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         m_filtered = f;
         notifyDataSetChanged();
     }
-    
+
     @Override
     public FileEntry getItem(int position) {
         // TODO Auto-generated method stub
         return m_values.get(m_filtered.get(position));
     }
 
+    
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        // TODO Auto-generated method stub
-        CheckedTextView v = new CheckedTextView(m_context);
-        v.setFocusable(false);
         FileEntry e = getItem(position);
+
+        RelativeLayout l = new RelativeLayout(m_context);
+        RelativeLayout.LayoutParams params;
+
+        CheckBox box = new CheckBox(m_context);
+        box.setFocusable(false);
+        box.setFocusableInTouchMode(false);
+        box.setId(1);
+        if (e.dir) {
+            box.setEnabled(false);
+        }
+        l.addView(box);
+
+        CheckedTextView v = new CheckedTextView(m_context);
+        params = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.RIGHT_OF, 1);
+        l.addView(v, params);
         v.setText(e.name);
         if (e.dir) {
             v.setTextColor(Color.BLUE);
@@ -67,6 +88,6 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
             }
         }
         ;
-        return v;
+        return l;
     }
 }

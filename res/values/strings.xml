@@ -2,6 +2,7 @@
 <resources>
 
     <string name="hello">Hello World, SSHExplorerActivity!</string>
-    <string name="app_name">Sshexplorer</string>
+    <string name="app_name">SSH explorer</string>
+    <string name="exchgservice_name">SSH exchange service</string>
 
 </resources>

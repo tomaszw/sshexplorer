@@ -34,13 +34,18 @@ public class SSHFileSystem implements FileSystem {
         ArrayList<FileEntry> values = new ArrayList<FileEntry>();
         Vector v;
         try {
-            v = m_sftpChannel.ls(".");
+            v = m_sftpChannel.ls(path);
         } catch (SftpException ex) {
             throw(new IOException(ex));
         }
         for (Object o : v) {
             if (o instanceof LsEntry) {
                 LsEntry e = (LsEntry) o;
+                if (e.getFilename().equals(".")
+                        || e.getFilename().equals("..")) {
+                    continue;
+                }
+                
                 String epath = path.equals(".") ? "" : path;
                 values.add(FileEntry.fromLsEntry(path, e));
             }
