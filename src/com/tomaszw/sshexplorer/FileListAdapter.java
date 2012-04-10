@@ -2,26 +2,26 @@ package com.tomaszw.sshexplorer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.CompoundButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 public class FileListAdapter extends ArrayAdapter<FileEntry> {
     private List<FileEntry> m_values;
     private List<Integer> m_checked = new ArrayList<Integer>();
     private List<Integer> m_filtered;
+    private Map<Integer,CheckBox> m_boxes = new HashMap<Integer,CheckBox>();
+    
     private Context m_context;
 
     public FileListAdapter(Context c, List<FileEntry> values) {
@@ -65,6 +65,16 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         return entries;
     }
     
+    public void clearCheck(FileEntry e) {
+        int i = m_values.indexOf(e);
+        if (i != -1) {
+            CheckBox box = m_boxes.get(i);
+            if (box != null) {
+                box.setChecked(false);
+            }
+        }
+    }
+    
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         FileEntry e = getItem(position);
@@ -98,11 +108,12 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         }
         
         /* checkbox listener */
+        final int idx = m_filtered.get(position);
+        m_boxes.put(idx, box);
         box.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
             
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                int idx = m_filtered.get(position);
                 if (isChecked) {
                     m_checked.add(idx);
                 } else {

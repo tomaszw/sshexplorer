@@ -4,10 +4,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -18,10 +23,10 @@ import android.util.Log;
 public class ExchangeService extends Service {
     public static final String TAG = "exchange-service";
     public static final int CHUNK_SIZE = 0x1000;
-
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
-
+    private NotificationManager m_notifyManager;
+    private static int DOWNLOAD_ID = 1;
     private IBinder m_binder = new ExchangeBinder();
 
     @Override
@@ -29,6 +34,25 @@ public class ExchangeService extends Service {
         // TODO Auto-generated method stub
         super.onCreate();
         Log.d(TAG, "created");
+        m_notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    private void downloadNotification(String tickerText, String contentText) {
+        int icon = R.drawable.ic_launcher;
+        long when = System.currentTimeMillis();
+        Notification notification = new Notification(icon, tickerText, when);
+        Context context = getApplicationContext();
+        CharSequence contentTitle = "SSH Explorer";
+        Intent notificationIntent = new Intent(this, SSHExplorerActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+                notificationIntent, 0);
+        notification.setLatestEventInfo(context, contentTitle, contentText,
+                contentIntent);
+        m_notifyManager.notify(DOWNLOAD_ID, notification);
+    }
+
+    private void cancelDownloadNotification() {
+        m_notifyManager.cancel(DOWNLOAD_ID);
     }
 
     @Override
@@ -44,6 +68,21 @@ public class ExchangeService extends Service {
         return m_binder;
     }
 
+    public boolean alreadyDownloading(DownloadEntry a) {
+        for (DownloadEntry b : m_entries) {
+            if (b.filesystem == a.filesystem && b.filePath.equals(a.filePath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void cancelAllDownloads() {
+        if (m_dltask != null) {
+            m_dltask.cancel(true);
+        }
+    }
+
     public void download(FileSystem fs, String path, long estimatedSize) {
         Log.d(TAG, "download " + path);
         DownloadEntry e = new DownloadEntry();
@@ -52,12 +91,20 @@ public class ExchangeService extends Service {
         e.downloaded = 0;
         e.size = estimatedSize;
         synchronized (m_entries) {
+            if (alreadyDownloading(e)) {
+                Log.d(TAG, "already downloading " + path);
+                return;
+            }
             m_entries.add(e);
             if (m_dltask == null) {
                 m_dltask = new DownloadTask();
+                downloadNotification("Transferring", "");
                 m_dltask.execute(null);
             }
         }
+    }
+
+    public void notification(String msg) {
     }
 
     class DownloadEntry {
@@ -77,6 +124,9 @@ public class ExchangeService extends Service {
 
     class DownloadTask extends AsyncTask<Void, Double, Void> {
         private boolean m_running;
+        private int m_ptr = -1;
+        private long m_lastNotifyTime = 0;
+        private long m_lastDownloaded = -1;
 
         public DownloadTask() {
             m_running = true;
@@ -86,39 +136,48 @@ public class ExchangeService extends Service {
         protected void onCancelled() {
             // TODO Auto-generated method stub
             m_running = false;
+            super.onCancelled();
         }
 
         @Override
         protected Void doInBackground(Void... params) {
             publishProgress((double) 0);
-            try {
-                while (m_running) {
-                    DownloadEntry e = null;
-                    synchronized (m_entries) {
-                        if (m_entries.isEmpty()) {
-                            m_dltask = null;
-                            break;
-                        }
-                        e = m_entries.get(0);
+            m_ptr = 0;
+            for (;;) {
+                DownloadEntry e = null;
+                synchronized (m_entries) {
+                    if (m_ptr >= m_entries.size() || !m_running) {
+                        m_ptr = -1;
+                        m_entries.clear();
+                        m_dltask = null;
+                        cancelDownloadNotification();
+                        break;
                     }
-                    Log.d(TAG, "start downloading " + e.filePath + " ("
-                            + e.size + " bytes)");
-                    try {
-                        String dst = new File(
-                                Environment.getExternalStorageDirectory(),
-                                cutFileName(e.filePath)).getAbsolutePath();
-                        scpFrom(e, dst);
-                        synchronized (m_entries) {
-                            m_entries.remove(0);
-                        }
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        // FIXME: error handling
-                        // error("Transfer error: " + ex.getMessage());
-                    }
+                    e = m_entries.get(m_ptr);
                 }
-            } finally {
-                publishProgress((double) 1);
+                Log.d(TAG, "start downloading " + e.filePath + " (" + e.size
+                        + " bytes)");
+                try {
+                    String dst = new File(
+                            Environment.getExternalStorageDirectory(),
+                            cutFileName(e.filePath)).getAbsolutePath();
+                    scpFrom(e, dst);
+                    ++m_ptr;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    synchronized (m_entries) {
+                        downloadNotification("Transfer error", ex.getMessage());
+                        m_ptr = -1;
+                        m_entries.clear();
+                        m_dltask = null;
+                    }
+                    break;
+                    // FIXME: error handling
+                    // error("Transfer error: " + ex.getMessage());
+                }
+            }
+            if (isCancelled()) {
+                downloadNotification("Cancelled", "Cancelled");
             }
             return null;
         }
@@ -150,14 +209,15 @@ public class ExchangeService extends Service {
                         // eof
                         break;
                     }
-                    Log.d(TAG, "read " + r + " bytes");
+                    // Log.d(TAG, "read " + r + " bytes");
                     totalRead += r;
                     fos.write(buf, 0, r);
                     entry.downloaded = totalRead;
                     if (totalSize != 0) {
-                        publishProgress(computeProgress());
+                        publishProgress(null);
                     }
                 }
+            } catch (InterruptedIOException ex) {
             } finally {
                 try {
                     fos.close();
@@ -169,9 +229,21 @@ public class ExchangeService extends Service {
             if (totalRead < totalSize) {
                 Log.e(TAG, "only " + totalRead + " bytes read out of "
                         + totalSize);
+                // remove partial file
+                new File(dstPath).delete();
             } else {
                 Log.d(TAG, "done " + totalRead + " bytes");
             }
+        }
+
+        private long totalDownloaded() {
+            long done = 0;
+            synchronized (m_entries) {
+                for (DownloadEntry e : m_entries) {
+                    done += e.downloaded;
+                }
+            }
+            return done;
         }
 
         private double computeProgress() {
@@ -189,8 +261,25 @@ public class ExchangeService extends Service {
         @Override
         protected void onProgressUpdate(Double... values) {
             // TODO Auto-generated method stub
-            long p = Math.round(values[0] * 100);
-            Log.d(TAG, "progress " + p + "%");
+            long curTime = System.currentTimeMillis();
+            long delta = curTime - m_lastNotifyTime;
+            if (delta >= 2000) {
+                m_lastNotifyTime = curTime;
+                double progress = computeProgress();
+                long downloaded = totalDownloaded();
+                double kbps = 0;
+                if (m_lastDownloaded > 0) {
+                    long downDiff = downloaded - m_lastDownloaded;
+                    long bps = downDiff * 1000 / delta;
+                    kbps = bps / 1024;
+                }
+                long p = Math.round(progress * 100);
+                downloadNotification("", String.format(
+                        "Transferring files (%d/%d): %d%%, %.1f kbps",
+                        m_ptr + 1, m_entries.size(), p, (float) kbps));
+                m_lastDownloaded = downloaded;
+                Log.d(TAG, "progress " + p + "%");
+            }
         }
     }
 

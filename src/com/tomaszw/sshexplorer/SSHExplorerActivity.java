@@ -141,15 +141,19 @@ public class SSHExplorerActivity extends Activity {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.downloadSelected) {
-            List<FileEntry> entries = ((FileListAdapter) m_fileListView
-                    .getAdapter()).getCheckedEntries();
+            FileListAdapter adapter = (FileListAdapter) m_fileListView
+                    .getAdapter();
+            List<FileEntry> entries = adapter.getCheckedEntries();
             Log.d(TAG, entries.size() + " items for download");
             for (FileEntry fileE : entries) {
                 if (!fileE.dir) {
                     download(fileE);
                 }
+                adapter.clearCheck(fileE);
             }
             return true;
+        } else if (item.getItemId() == R.id.cancelAllDownloads) {
+            m_exchangeService.cancelAllDownloads();
         }
         return false;
     }
