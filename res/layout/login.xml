@@ -19,6 +19,7 @@
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_below="@+id/textView1"
+        android:singleLine="true"
         android:ems="10" />
 
     <TextView
@@ -37,6 +38,7 @@
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_below="@+id/textView2"
+        android:singleLine="true"
         android:ems="10" />
 
     <TextView
@@ -55,6 +57,7 @@
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/textView3"
         android:ems="10"
+        android:singleLine="true"
         android:inputType="textPassword" />
 
     <Button

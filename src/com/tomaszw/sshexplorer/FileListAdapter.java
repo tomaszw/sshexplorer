@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
@@ -19,6 +20,7 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 public class FileListAdapter extends ArrayAdapter<FileEntry> {
     private List<FileEntry> m_values;
+    private List<Integer> m_checked = new ArrayList<Integer>();
     private List<Integer> m_filtered;
     private Context m_context;
 
@@ -55,9 +57,16 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         return m_values.get(m_filtered.get(position));
     }
 
+    public List<FileEntry> getCheckedEntries() {
+        List<FileEntry> entries = new ArrayList<FileEntry>();
+        for (int p : m_checked) {
+            entries.add(m_values.get(p));
+        }
+        return entries;
+    }
     
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
         FileEntry e = getItem(position);
 
         RelativeLayout l = new RelativeLayout(m_context);
@@ -87,7 +96,20 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
                 v.setTextColor(Color.GREEN);
             }
         }
-        ;
+        
+        /* checkbox listener */
+        box.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
+            
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                int idx = m_filtered.get(position);
+                if (isChecked) {
+                    m_checked.add(idx);
+                } else {
+                    boolean removed = m_checked.remove((Object)idx);
+                }
+            }
+        });
         return l;
     }
 }

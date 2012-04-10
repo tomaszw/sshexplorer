@@ -4,12 +4,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.app.Service;
 import android.content.ComponentName;
@@ -22,17 +20,20 @@ import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.UserInfo;
 
 public class SSHExplorerActivity extends Activity {
     public static final String TAG = "ssh-explorer";
@@ -43,7 +44,6 @@ public class SSHExplorerActivity extends Activity {
     private String m_currentPath;
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
-
 
     /** Called when the activity is first created. */
     @Override
@@ -79,15 +79,15 @@ public class SSHExplorerActivity extends Activity {
         });
 
         m_fileListView = (ListView) findViewById(R.id.fileListView);
-        m_fileListView
-                .setOnItemLongClickListener(new ListView.OnItemLongClickListener() {
-                    @Override
-                    public boolean onItemLongClick(AdapterView<?> parent,
-                            View view, int position, long id) {
-                        doItemLongClick(position);
-                        return false;
-                    }
-                });
+        registerForContextMenu(m_fileListView);
+        /*
+         * m_fileListView .setOnItemLongClickListener(new
+         * ListView.OnItemLongClickListener() {
+         * 
+         * @Override public boolean onItemLongClick(AdapterView<?> parent, View
+         * view, int position, long id) { doItemLongClick(position); return
+         * false; } });
+         */
         m_fileListView
                 .setOnItemSelectedListener(new ListView.OnItemSelectedListener() {
 
@@ -120,6 +120,40 @@ public class SSHExplorerActivity extends Activity {
         startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // TODO Auto-generated method stub
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inf = getMenuInflater();
+        inf.inflate(R.menu.appmenu, menu);
+        return true;
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+            ContextMenuInfo menuInfo) {
+        // TODO Auto-generated method stub
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inf = getMenuInflater();
+        inf.inflate(R.menu.exploreitemmenu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.downloadSelected) {
+            List<FileEntry> entries = ((FileListAdapter) m_fileListView
+                    .getAdapter()).getCheckedEntries();
+            Log.d(TAG, entries.size() + " items for download");
+            for (FileEntry fileE : entries) {
+                if (!fileE.dir) {
+                    download(fileE);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void doItemClick(int position) {
         Log.d(TAG, "click " + position);
         FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
@@ -133,14 +167,13 @@ public class SSHExplorerActivity extends Activity {
         Log.d(TAG, "selected " + position);
     }
 
-    private void doItemLongClick(int position) {
-        Log.d(TAG, "long click " + position);
-        // TODO Auto-generated method stub
-        FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
-        if (!e.dir) {
-            download(e);
-        }
-    }
+    /*
+     * private void doItemLongClick(int position) { Log.d(TAG, "long click " +
+     * position); // TODO Auto-generated method stub
+     * 
+     * FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
+     * if (!e.dir) { download(e); } }
+     */
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -183,42 +216,33 @@ public class SSHExplorerActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_LOGIN) {
-            Login l = data.getExtras().getParcelable("login");
-            login(l);
+            m_currentPath = "";
+            try {
+                m_fs = new SSHFileSystem(App.session);
+                ls();
+            } catch (JSchException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                error(e.getMessage());
+            }
         }
     }
 
-    private void login(final Login data) {
-        // TODO Auto-generated method stub
-        Log.d(TAG, "Logging " + data.user + "@" + data.host);
-        new LoginTask(data).execute(null);
-    }
-
     private void error(final String m) {
-
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-                AlertDialog.Builder alert = new AlertDialog.Builder(
-                        SSHExplorerActivity.this);
-                alert.setTitle("Error");
-                alert.setMessage(m);
-                alert.show();
-            }
-        });
+        App.error(this, m);
     }
 
     @Override
     protected void onStart() {
         // TODO Auto-generated method stub
         super.onStart();
-        
+
         m_exchangeBridge = new ExchangeBridge();
-        Intent intent = new Intent(SSHExplorerActivity.this, ExchangeService.class);
+        Intent intent = new Intent(SSHExplorerActivity.this,
+                ExchangeService.class);
         bindService(intent, m_exchangeBridge, Service.BIND_AUTO_CREATE);
     }
-    
+
     @Override
     protected void onStop() {
         // TODO Auto-generated method stub
@@ -227,13 +251,12 @@ public class SSHExplorerActivity extends Activity {
             unbindService(m_exchangeBridge);
         }
     }
-    
-    
+
     private void download(FileEntry e) {
-        //Log.d(TAG, "download " + e.fullname());
-        //new DownloadTask(e).execute(null);
         if (m_exchangeService != null) {
-            m_exchangeService.download(App.session, e.fullname());
+            m_exchangeService.download(m_fs, e.fullname(), e.size);
+        } else {
+            Log.w(TAG, "download request but service is NULL");
         }
     }
 
@@ -241,101 +264,12 @@ public class SSHExplorerActivity extends Activity {
         new LsTask(m_currentPath).execute(null);
     }
 
-    class LoginTask extends AsyncTask<Void, Void, Void> {
-        private Login m_data;
-        private ProgressDialog m_progress;
-        private boolean m_connected = false;
-
-        public LoginTask(Login data) {
-            m_data = data;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            // TODO Auto-generated method stub
-            JSch jsch = new JSch();
-            try {
-                Session session = jsch.getSession(m_data.user, m_data.host, 22);
-                session.setUserInfo(new UserInfo() {
-
-                    @Override
-                    public void showMessage(String arg0) {
-                        // TODO Auto-generated method stub
-
-                    }
-
-                    @Override
-                    public boolean promptYesNo(String arg0) {
-                        // TODO Auto-generated method stub
-                        return true;
-                    }
-
-                    @Override
-                    public boolean promptPassword(String arg0) {
-                        // TODO Auto-generated method stub
-                        return true;
-                    }
-
-                    @Override
-                    public boolean promptPassphrase(String arg0) {
-                        // TODO Auto-generated method stub
-                        return false;
-                    }
-
-                    @Override
-                    public String getPassword() {
-                        // TODO Auto-generated method stub
-                        return m_data.pass;
-                    }
-
-                    @Override
-                    public String getPassphrase() {
-                        // TODO Auto-generated method stub
-                        return null;
-                    }
-                });
-                Log.d(TAG, "establishing session");
-                session.connect();
-                App.session = session;
-                m_currentPath = "";
-                m_fs = new SSHFileSystem(session);
-                m_connected = true;
-            } catch (JSchException e) {
-                e.printStackTrace();
-                if (e.getCause() instanceof UnknownHostException) {
-                    error(" Unknown host: " + m_data.host);
-                } else {
-                error(e.getMessage());
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            m_progress = new ProgressDialog(SSHExplorerActivity.this);
-            m_progress.setMessage("Connecting...");
-            m_progress.setIndeterminate(true);
-            m_progress.setCancelable(false);
-            m_progress.show();
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            if (m_progress != null) {
-                m_progress.dismiss();
-            }
-            if (m_connected) {
-                ls();
-            }
-        }
-    }
-
     class ExchangeBridge implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             // TODO Auto-generated method stub
-            m_exchangeService = ((ExchangeService.ExchangeBinder) service).service();
+            m_exchangeService = ((ExchangeService.ExchangeBinder) service)
+                    .service();
             Log.d(TAG, "service connected");
         }
 
@@ -343,10 +277,10 @@ public class SSHExplorerActivity extends Activity {
         public void onServiceDisconnected(ComponentName name) {
             // TODO Auto-generated method stub
             m_exchangeService = null;
-            
+
         }
     }
-    
+
     class LsTask extends AsyncTask<Void, Integer, List<FileEntry>> {
         private String m_path;
         private ProgressDialog m_progress;
