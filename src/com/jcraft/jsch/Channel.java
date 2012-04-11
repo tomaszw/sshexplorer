@@ -29,11 +29,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.jcraft.jsch;
 
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+
+import com.tomaszw.sshexplorer.stream.FastPipedInputStream;
+import com.tomaszw.sshexplorer.stream.FastPipedOutputStream;
 
 
 public abstract class Channel implements Runnable{
@@ -192,20 +195,17 @@ public abstract class Channel implements Runnable{
     io.setExtOutputStream(out, dontclose);
   }
   public InputStream getInputStream() throws IOException {
-    PipedInputStream in=
-      new MyPipedInputStream(
-                             32*1024  // this value should be customizable.
-                             );
-    io.setOutputStream(new PassiveOutputStream(in), false);
-    return in;
+      FastPipedOutputStream out = new FastPipedOutputStream();
+      FastPipedInputStream in = new FastPipedInputStream(out);
+      io.setOutputStream(out, false);
+      return in;
   }
+
   public InputStream getExtInputStream() throws IOException {
-    PipedInputStream in=
-      new MyPipedInputStream(
-                             32*1024  // this value should be customizable.
-                             );
-    io.setExtOutputStream(new PassiveOutputStream(in), false);
-    return in;
+      FastPipedOutputStream out = new FastPipedOutputStream();
+      FastPipedInputStream in = new FastPipedInputStream(out);
+      io.setExtOutputStream(out, false);
+      return in;
   }
   public OutputStream getOutputStream() throws IOException {
     /*
