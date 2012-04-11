@@ -19,8 +19,6 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
 public class LoginActivity extends Activity implements OnClickListener {
-    public static final String TAG = "login";
-
     private EditText m_editHost;
     private EditText m_editUser;
     private EditText m_editPassword;
@@ -67,7 +65,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 
     private void login(final Login data) {
         // TODO Auto-generated method stub
-        Log.d(TAG, "Logging " + data.user + "@" + data.host);
+        Log.d(App.TAG, "Logging " + data.user + "@" + data.host);
         new LoginTask(data).execute(null);
     }
 
@@ -128,16 +126,18 @@ public class LoginActivity extends Activity implements OnClickListener {
                         return null;
                     }
                 });
-                Log.d(TAG, "establishing session");
+                
+                Log.d(App.TAG, "establishing session");
                 session.setConfig("compression.s2c", "none");
                 session.setConfig("compression.c2s", "none");
                 session.connect();
                 // rekey for scp performance
                 session.setConfig("cipher.s2c", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
                 session.setConfig("cipher.c2s", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
+                session.rekey();
                 App.session = session;
                 m_connected = true;
-            } catch (JSchException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 if (e.getCause() instanceof UnknownHostException) {
                     error(" Unknown host: " + m_data.host);

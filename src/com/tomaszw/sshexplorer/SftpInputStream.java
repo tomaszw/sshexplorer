@@ -19,7 +19,6 @@ public class SftpInputStream extends InputStream {
     private String m_path;
     private InputStream m_in;
     private OutputStream m_out;
-    private static final String TAG = "sftp-input";
     private GetThread m_getThread;
     
     public static class Header {
@@ -36,7 +35,7 @@ public class SftpInputStream extends InputStream {
         public void write(byte[] buffer, int offset, int count)
                 throws IOException {
             // TODO Auto-generated method stub
-            //Log.d(TAG, "write " + count);
+            //Log.d(App.TAG, "write " + count);
             super.write(buffer, offset, count);
         }
     }

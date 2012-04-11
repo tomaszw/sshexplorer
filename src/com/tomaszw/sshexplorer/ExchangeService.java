@@ -22,7 +22,6 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class ExchangeService extends Service {
-    public static final String TAG = "exchange-service";
     public static final int CHUNK_SIZE = 16384;
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
@@ -34,7 +33,7 @@ public class ExchangeService extends Service {
     public void onCreate() {
         // TODO Auto-generated method stub
         super.onCreate();
-        Log.d(TAG, "created");
+        Log.d(App.TAG, "created");
         m_notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
@@ -58,7 +57,7 @@ public class ExchangeService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "destroyed");
+        Log.d(App.TAG, "destroyed");
         // TODO Auto-generated method stub
         cancelAllDownloads();
         super.onDestroy();
@@ -86,7 +85,7 @@ public class ExchangeService extends Service {
     }
 
     public void download(FileSystem fs, String path, long estimatedSize) {
-        Log.d(TAG, "download " + path);
+        Log.d(App.TAG, "download " + path);
         DownloadEntry e = new DownloadEntry();
         e.filesystem = fs;
         e.filePath = path;
@@ -94,7 +93,7 @@ public class ExchangeService extends Service {
         e.size = estimatedSize;
         synchronized (m_entries) {
             if (alreadyDownloading(e)) {
-                Log.d(TAG, "already downloading " + path);
+                Log.d(App.TAG, "already downloading " + path);
                 return;
             }
             m_entries.add(e);
@@ -156,7 +155,7 @@ public class ExchangeService extends Service {
                     }
                     e = m_entries.get(m_ptr);
                 }
-                Log.d(TAG, "start downloading " + e.filePath + " (" + e.size
+                Log.d(App.TAG, "start downloading " + e.filePath + " (" + e.size
                         + " bytes)");
                 try {
                     String dst = new File(
@@ -187,12 +186,12 @@ public class ExchangeService extends Service {
                 throws IOException {
             String srcPath = entry.filePath;
             FileSystem fs = entry.filesystem;
-            Log.d(TAG, "size (estimate 1) = " + entry.size);
+            Log.d(App.TAG, "size (estimate 1) = " + entry.size);
             InputStream in = fs.input(srcPath);
             /* better size estimate if supported */
             if (in instanceof ProvidesStreamSize) {
                 entry.size = ((ProvidesStreamSize) in).streamSize();
-                Log.d(TAG, "size (estimate 2) = " + entry.size);
+                Log.d(App.TAG, "size (estimate 2) = " + entry.size);
             }
 
             long totalSize = entry.size;
@@ -213,7 +212,7 @@ public class ExchangeService extends Service {
                     }
                     fos.write(buf, 0, r);
 
-                    // Log.d(TAG, "read " + r + " bytes");
+                    // Log.d(App.TAG, "read " + r + " bytes");
                     totalDone += r;
                     entry.downloaded = totalDone;
                     time = System.currentTimeMillis();
@@ -234,12 +233,12 @@ public class ExchangeService extends Service {
                 fos = null;
             }
             if (totalDone < totalSize) {
-                Log.e(TAG, "only " + totalDone + " bytes read out of "
+                Log.e(App.TAG, "only " + totalDone + " bytes read out of "
                         + totalSize);
                 // remove partial file
                 new File(dstPath).delete();
             } else {
-                Log.d(TAG, "done " + totalDone + " bytes");
+                Log.d(App.TAG, "done " + totalDone + " bytes");
             }
         }
 
@@ -283,7 +282,7 @@ public class ExchangeService extends Service {
                     "Transferring files (%d/%d): %d%%, %.1f kbps", m_ptr + 1,
                     m_entries.size(), p, kbps));
             m_lastDownloaded = done;
-            Log.d(TAG, "progress " + p + "%");
+            Log.d(App.TAG, "progress " + p + "%");
         }
     }
 

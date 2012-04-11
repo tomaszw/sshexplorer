@@ -36,7 +36,6 @@ import android.widget.ListView;
 import com.jcraft.jsch.JSchException;
 
 public class SSHExplorerActivity extends Activity {
-    public static final String TAG = "ssh-explorer";
     public static final int REQ_LOGIN = 0;
     private ListView m_fileListView;
     private EditText m_fileFilterEdit;
@@ -61,7 +60,7 @@ public class SSHExplorerActivity extends Activity {
                 FileListAdapter adapter = (FileListAdapter) m_fileListView
                         .getAdapter();
                 if (adapter != null) {
-                    Log.d(TAG, "setting filter " + s);
+                    Log.d(App.TAG, "setting filter " + s);
                     adapter.pattern(s);
                 }
 
@@ -159,7 +158,7 @@ public class SSHExplorerActivity extends Activity {
             FileListAdapter adapter = (FileListAdapter) m_fileListView
                     .getAdapter();
             List<FileEntry> entries = adapter.getCheckedEntries();
-            Log.d(TAG, entries.size() + " items for download");
+            Log.d(App.TAG, entries.size() + " items for download");
             for (FileEntry fileE : entries) {
                 if (!fileE.dir) {
                     download(fileE);
@@ -174,7 +173,7 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void doItemClick(int position) {
-        Log.d(TAG, "click " + position);
+        Log.d(App.TAG, "click " + position);
         FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
         if (e.dir) {
             pushPath(e.name);
@@ -183,7 +182,7 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void doItemSelected(int position) {
-        Log.d(TAG, "selected " + position);
+        Log.d(App.TAG, "selected " + position);
     }
 
     /*
@@ -267,7 +266,7 @@ public class SSHExplorerActivity extends Activity {
     protected void onStop() {
         // TODO Auto-generated method stub
         super.onStop();
-        if (m_exchangeService != null) {
+        if (m_exchangeBridge != null) {
             unbindService(m_exchangeBridge);
         }
     }
@@ -276,7 +275,7 @@ public class SSHExplorerActivity extends Activity {
         if (m_exchangeService != null) {
             m_exchangeService.download(m_fs, e.fullname(), e.size);
         } else {
-            Log.w(TAG, "download request but service is NULL");
+            Log.w(App.TAG, "download request but service is NULL");
         }
     }
 
@@ -290,7 +289,7 @@ public class SSHExplorerActivity extends Activity {
             // TODO Auto-generated method stub
             m_exchangeService = ((ExchangeService.ExchangeBinder) service)
                     .service();
-            Log.d(TAG, "service connected");
+            Log.d(App.TAG, "service connected");
         }
 
         @Override
@@ -358,7 +357,7 @@ public class SSHExplorerActivity extends Activity {
         @Override
         protected Void doInBackground(Void... params) {
             // TODO Auto-generated method stub
-            Log.d(TAG, "start download task of " + m_entry.name);
+            Log.d(App.TAG, "start download task of " + m_entry.name);
             try {
                 scpFrom(m_entry.fullname(),
                         new File(Environment.getExternalStorageDirectory(),
@@ -372,12 +371,12 @@ public class SSHExplorerActivity extends Activity {
 
         private void scpFrom(String srcPath, String dstPath) throws IOException {
             long totalSize = m_entry.size;
-            Log.d(TAG, "size (estimate 1) = " + totalSize);
+            Log.d(App.TAG, "size (estimate 1) = " + totalSize);
             InputStream in = m_fs.input(srcPath);
             /* better size estimate if supported */
             if (in instanceof ProvidesStreamSize) {
                 totalSize = ((ProvidesStreamSize) in).streamSize();
-                Log.d(TAG, "size (estimate 2) = " + totalSize);
+                Log.d(App.TAG, "size (estimate 2) = " + totalSize);
             }
 
             byte[] buf = new byte[4096];
@@ -395,7 +394,7 @@ public class SSHExplorerActivity extends Activity {
                             // eof
                             break;
                         }
-                        Log.d(TAG, "read " + r + " bytes");
+                        Log.d(App.TAG, "read " + r + " bytes");
                         totalRead += r;
                         fos.write(buf, 0, r);
                         if (totalSize != 0) {
@@ -412,10 +411,10 @@ public class SSHExplorerActivity extends Activity {
                     fos = null;
                 }
                 if (totalRead < totalSize) {
-                    Log.e(TAG, "only " + totalRead + " bytes read out of "
+                    Log.e(App.TAG, "only " + totalRead + " bytes read out of "
                             + totalSize);
                 } else {
-                    Log.d(TAG, "done " + totalRead + " bytes");
+                    Log.d(App.TAG, "done " + totalRead + " bytes");
                 }
             } finally {
                 publishProgress((double) 1);

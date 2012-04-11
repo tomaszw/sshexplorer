@@ -179,7 +179,7 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
             }
         }
         if (b != 0) {
-            Log.e(SSHExplorerActivity.TAG, m_path + " ack=" + b);
+            Log.e(App.TAG, m_path + " ack=" + b);
         }
         return b;
     }

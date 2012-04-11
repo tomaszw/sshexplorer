@@ -8,6 +8,7 @@ import com.jcraft.jsch.Session;
 
 public class App extends Application {
     public static Session session;
+    public static final String TAG = "ssh-explorer";
     
     public static void error(final Activity activity, final String message) {
         activity.runOnUiThread(new Runnable() {
@@ -22,5 +23,5 @@ public class App extends Application {
             }
         });
     }
-    
+
 }
