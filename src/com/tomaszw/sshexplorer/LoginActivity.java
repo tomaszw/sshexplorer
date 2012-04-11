@@ -129,7 +129,12 @@ public class LoginActivity extends Activity implements OnClickListener {
                     }
                 });
                 Log.d(TAG, "establishing session");
+                session.setConfig("compression.s2c", "none");
+                session.setConfig("compression.c2s", "none");
                 session.connect();
+                // rekey for scp performance
+                session.setConfig("cipher.s2c", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
+                session.setConfig("cipher.c2s", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
                 App.session = session;
                 m_connected = true;
             } catch (JSchException e) {
@@ -159,7 +164,7 @@ public class LoginActivity extends Activity implements OnClickListener {
             }
             if (m_connected) {
                 Intent data = new Intent();
-                //data.putExtra("login", getLogin());
+                // data.putExtra("login", getLogin());
                 setResult(RESULT_OK, data);
                 finish();
             }

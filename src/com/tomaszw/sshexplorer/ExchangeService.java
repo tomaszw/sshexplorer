@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ import android.util.Log;
 
 public class ExchangeService extends Service {
     public static final String TAG = "exchange-service";
-    public static final int CHUNK_SIZE = 0x1000;
+    public static final int CHUNK_SIZE = 16384;
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
     private NotificationManager m_notifyManager;
@@ -59,6 +60,7 @@ public class ExchangeService extends Service {
     public void onDestroy() {
         Log.d(TAG, "destroyed");
         // TODO Auto-generated method stub
+        cancelAllDownloads();
         super.onDestroy();
     }
 
@@ -125,7 +127,6 @@ public class ExchangeService extends Service {
     class DownloadTask extends AsyncTask<Void, Double, Void> {
         private boolean m_running;
         private int m_ptr = -1;
-        private long m_lastNotifyTime = 0;
         private long m_lastDownloaded = -1;
 
         public DownloadTask() {
@@ -186,21 +187,22 @@ public class ExchangeService extends Service {
                 throws IOException {
             String srcPath = entry.filePath;
             FileSystem fs = entry.filesystem;
-
             Log.d(TAG, "size (estimate 1) = " + entry.size);
             InputStream in = fs.input(srcPath);
             /* better size estimate if supported */
-            if (in instanceof KnownSize) {
-                entry.size = ((KnownSize) in).knownSize();
+            if (in instanceof ProvidesStreamSize) {
+                entry.size = ((ProvidesStreamSize) in).streamSize();
                 Log.d(TAG, "size (estimate 2) = " + entry.size);
             }
-            long totalSize = entry.size;
 
+            long totalSize = entry.size;
             byte[] buf = new byte[CHUNK_SIZE];
-            FileOutputStream fos = new FileOutputStream(dstPath);
-            long totalRead = 0;
+            OutputStream fos = new FileOutputStream(dstPath);
+            long totalDone = 0;
+            long timeLoBound = System.currentTimeMillis();
+            long time = timeLoBound;
             try {
-                while (totalRead < totalSize) {
+                while (totalDone < totalSize) {
                     if (!m_running) {
                         break;
                     }
@@ -209,15 +211,20 @@ public class ExchangeService extends Service {
                         // eof
                         break;
                     }
-                    // Log.d(TAG, "read " + r + " bytes");
-                    totalRead += r;
                     fos.write(buf, 0, r);
-                    entry.downloaded = totalRead;
-                    if (totalSize != 0) {
-                        publishProgress(null);
+
+                    // Log.d(TAG, "read " + r + " bytes");
+                    totalDone += r;
+                    entry.downloaded = totalDone;
+                    time = System.currentTimeMillis();
+                    double dt = (double) (time - timeLoBound) / 1000;
+                    if (dt >= 2) {
+                        timeLoBound = time;
+                        publishProgress(dt);
                     }
                 }
             } catch (InterruptedIOException ex) {
+                // cancel likely
             } finally {
                 try {
                     fos.close();
@@ -226,13 +233,13 @@ public class ExchangeService extends Service {
 
                 fos = null;
             }
-            if (totalRead < totalSize) {
-                Log.e(TAG, "only " + totalRead + " bytes read out of "
+            if (totalDone < totalSize) {
+                Log.e(TAG, "only " + totalDone + " bytes read out of "
                         + totalSize);
                 // remove partial file
                 new File(dstPath).delete();
             } else {
-                Log.d(TAG, "done " + totalRead + " bytes");
+                Log.d(TAG, "done " + totalDone + " bytes");
             }
         }
 
@@ -260,26 +267,23 @@ public class ExchangeService extends Service {
 
         @Override
         protected void onProgressUpdate(Double... values) {
-            // TODO Auto-generated method stub
-            long curTime = System.currentTimeMillis();
-            long delta = curTime - m_lastNotifyTime;
-            if (delta >= 2000) {
-                m_lastNotifyTime = curTime;
-                double progress = computeProgress();
-                long downloaded = totalDownloaded();
-                double kbps = 0;
-                if (m_lastDownloaded > 0) {
-                    long downDiff = downloaded - m_lastDownloaded;
-                    long bps = downDiff * 1000 / delta;
-                    kbps = bps / 1024;
-                }
-                long p = Math.round(progress * 100);
-                downloadNotification("", String.format(
-                        "Transferring files (%d/%d): %d%%, %.1f kbps",
-                        m_ptr + 1, m_entries.size(), p, (float) kbps));
-                m_lastDownloaded = downloaded;
-                Log.d(TAG, "progress " + p + "%");
+            double dt = values[0];
+            if (dt <= 0)
+                return;
+            double progress = computeProgress();
+            long done = totalDownloaded();
+            double kbps = 0;
+            if (m_lastDownloaded > 0) {
+                long doneDelta = done - m_lastDownloaded;
+                double bps = doneDelta / dt;
+                kbps = bps / 1024;
             }
+            long p = Math.round(progress * 100);
+            downloadNotification("", String.format(
+                    "Transferring files (%d/%d): %d%%, %.1f kbps", m_ptr + 1,
+                    m_entries.size(), p, kbps));
+            m_lastDownloaded = done;
+            Log.d(TAG, "progress " + p + "%");
         }
     }
 

@@ -1,5 +1,6 @@
 package com.tomaszw.sshexplorer;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,7 +11,7 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
-public class ScpInputStream extends InputStream implements KnownSize {
+public class ScpInputStream extends InputStream implements ProvidesStreamSize {
     private Session m_session;
     private OutputStream m_out;
     private InputStream m_in;
@@ -31,6 +32,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
         try {
             m_channel = (ChannelExec) m_session.openChannel("exec");
             m_channel.setCommand("scp -f " + path);
+            //m_channel.set
             m_out = m_channel.getOutputStream();
             m_in = m_channel.getInputStream();
             m_channel.connect();
@@ -93,7 +95,7 @@ public class ScpInputStream extends InputStream implements KnownSize {
         m_out.flush();
     }
 
-    public long knownSize() {
+    public long streamSize() {
         try {
             assertHeader();
         } catch (IOException e) {

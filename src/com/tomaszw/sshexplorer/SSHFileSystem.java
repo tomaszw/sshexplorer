@@ -52,7 +52,7 @@ public class SSHFileSystem implements FileSystem {
         }
         return values;
     }
-
+    
     @Override
     public InputStream input(String path) throws IOException {
         return new ScpInputStream(m_session, path);

@@ -139,6 +139,21 @@ public class SSHExplorerActivity extends Activity {
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // TODO Auto-generated method stub
+        if (item.getItemId() == R.id.quit) {
+            Intent intent = new Intent(SSHExplorerActivity.this,
+                    ExchangeService.class);
+            unbindService(m_exchangeBridge);
+            m_exchangeBridge = null;
+            stopService(intent);
+            finish();
+            return true;
+        }
+        return false;
+    }
+    
+    @Override
     public boolean onContextItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.downloadSelected) {
             FileListAdapter adapter = (FileListAdapter) m_fileListView
@@ -244,7 +259,8 @@ public class SSHExplorerActivity extends Activity {
         m_exchangeBridge = new ExchangeBridge();
         Intent intent = new Intent(SSHExplorerActivity.this,
                 ExchangeService.class);
-        bindService(intent, m_exchangeBridge, Service.BIND_AUTO_CREATE);
+        bindService(intent, m_exchangeBridge, 0);//Service.BIND_AUTO_CREATE);
+        startService(intent);
     }
 
     @Override
@@ -359,8 +375,8 @@ public class SSHExplorerActivity extends Activity {
             Log.d(TAG, "size (estimate 1) = " + totalSize);
             InputStream in = m_fs.input(srcPath);
             /* better size estimate if supported */
-            if (in instanceof KnownSize) {
-                totalSize = ((KnownSize) in).knownSize();
+            if (in instanceof ProvidesStreamSize) {
+                totalSize = ((ProvidesStreamSize) in).streamSize();
                 Log.d(TAG, "size (estimate 2) = " + totalSize);
             }
 
