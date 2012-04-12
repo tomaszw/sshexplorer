@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package com.tomaszw.sshexplorer.stream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import android.util.Log;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import com.tomaszw.sshexplorer.App;
 
 public class ScpInputStream extends InputStream implements ProvidesStreamSize {
     private Session m_session;

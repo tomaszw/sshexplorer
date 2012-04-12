@@ -128,12 +128,12 @@ public class LoginActivity extends Activity implements OnClickListener {
                 });
                 
                 Log.d(App.TAG, "establishing session");
-                session.setConfig("compression.s2c", "none");
-                session.setConfig("compression.c2s", "none");
                 session.connect();
                 // rekey for scp performance
                 session.setConfig("cipher.s2c", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
                 session.setConfig("cipher.c2s", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
+                session.setConfig("compression.s2c", "none");
+                session.setConfig("compression.c2s", "none");
                 session.rekey();
                 App.session = session;
                 m_connected = true;

@@ -34,6 +34,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 import com.jcraft.jsch.JSchException;
+import com.tomaszw.sshexplorer.stream.ProvidesStreamSize;
 
 public class SSHExplorerActivity extends Activity {
     public static final int REQ_LOGIN = 0;
@@ -234,7 +235,7 @@ public class SSHExplorerActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_LOGIN) {
-            m_currentPath = "";
+            m_currentPath = "foo";
             try {
                 m_fs = new SSHFileSystem(App.session);
                 ls();

@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.tomaszw.sshexplorer.stream.ProvidesStreamSize;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -22,7 +24,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class ExchangeService extends Service {
-    public static final int CHUNK_SIZE = 16384;
+    public static final int BUFFER_SIZE = 65536;
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
     private NotificationManager m_notifyManager;
@@ -195,7 +197,7 @@ public class ExchangeService extends Service {
             }
 
             long totalSize = entry.size;
-            byte[] buf = new byte[CHUNK_SIZE];
+            byte[] buf = new byte[BUFFER_SIZE];
             OutputStream fos = new FileOutputStream(dstPath);
             long totalDone = 0;
             long timeLoBound = System.currentTimeMillis();
