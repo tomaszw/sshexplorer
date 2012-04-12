@@ -8,11 +8,15 @@
         android:id="@+id/fileFilterEdit"
         android:layout_width="match_parent" 
         android:layout_height="wrap_content"
+        android:inputType="text"
         android:singleLine="true" 
         />
     <ListView
         android:id="@+id/fileListView"
+        android:clickable="false"
         android:choiceMode="none"
+        android:focusable="false"
+        android:divider="@android:color/transparent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
     </ListView>

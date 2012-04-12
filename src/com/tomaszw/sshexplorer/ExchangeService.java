@@ -107,9 +107,6 @@ public class ExchangeService extends Service {
         }
     }
 
-    public void notification(String msg) {
-    }
-
     class DownloadEntry {
         public FileSystem filesystem;
         public String filePath;
@@ -157,8 +154,8 @@ public class ExchangeService extends Service {
                     }
                     e = m_entries.get(m_ptr);
                 }
-                Log.d(App.TAG, "start downloading " + e.filePath + " (" + e.size
-                        + " bytes)");
+                Log.d(App.TAG, "start downloading " + e.filePath + " ("
+                        + e.size + " bytes)");
                 try {
                     String dst = new File(
                             Environment.getExternalStorageDirectory(),
@@ -179,7 +176,8 @@ public class ExchangeService extends Service {
                 }
             }
             if (isCancelled()) {
-                downloadNotification("Cancelled", "Cancelled");
+                downloadNotification("Transfer Cancelled", "Transfer Cancelled");
+                cancelDownloadNotification();
             }
             return null;
         }

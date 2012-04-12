@@ -17,10 +17,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
         android:layout_below="@+id/textView1"
-        android:singleLine="true"
-        android:ems="10" />
+        android:layout_centerVertical="true"
+        android:ems="10"
+        android:singleLine="true" />
 
     <TextView
         android:id="@+id/textView2"
@@ -36,10 +36,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
         android:layout_below="@+id/textView2"
-        android:singleLine="true"
-        android:ems="10" />
+        android:layout_centerVertical="true"
+        android:ems="10"
+        android:singleLine="true" />
 
     <TextView
         android:id="@+id/textView3"
@@ -57,15 +57,34 @@
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/textView3"
         android:ems="10"
-        android:singleLine="true"
-        android:inputType="textPassword" />
+        android:inputType="textPassword"
+        android:singleLine="true" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/editPassword"
+        android:text="Remote Path"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <EditText
+        android:id="@+id/editRemotePath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/textView4"
+        android:layout_centerVertical="true"
+        android:ems="10"
+        android:singleLine="true" />
 
     <Button
         android:id="@+id/loginBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/editPassword"
+        android:layout_below="@+id/editRemotePath"
         android:layout_marginTop="16dp"
         android:text="Login" />
 

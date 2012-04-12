@@ -29,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -41,10 +42,22 @@ public class SSHExplorerActivity extends Activity {
     private ListView m_fileListView;
     private EditText m_fileFilterEdit;
     private FileSystem m_fs;
-    private String m_currentPath;
+    private String m_currentPath = "";
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // TODO Auto-generated method stub
+        super.onSaveInstanceState(outState);
+        outState.putString("path", m_currentPath);
+    }
+    
+    private void restore(Bundle s) {
+        // TODO Auto-generated method stub
+        m_currentPath = s.getString("path");
+    }
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,6 +66,21 @@ public class SSHExplorerActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         m_fileFilterEdit = (EditText) findViewById(R.id.fileFilterEdit);
+        App.kbhide(m_fileFilterEdit);
+/*        
+        m_fileFilterEdit.setOnFocusChangeListener(new EditText.OnFocusChangeListener() {
+            
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                // TODO Auto-generated method stub
+                if (!hasFocus) {
+                    InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(m_fileFilterEdit.getWindowToken(), 0);
+                }
+                
+            }
+        });
+  */      
         m_fileFilterEdit.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -79,6 +107,7 @@ public class SSHExplorerActivity extends Activity {
         });
 
         m_fileListView = (ListView) findViewById(R.id.fileListView);
+        m_fileListView.setSelector(android.R.color.transparent);
         registerForContextMenu(m_fileListView);
         /*
          * m_fileListView .setOnItemLongClickListener(new
@@ -117,9 +146,17 @@ public class SSHExplorerActivity extends Activity {
                     }
                 });
 
-        startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
+        if (savedInstanceState != null) {
+            restore(savedInstanceState);
+        }
+        if (App.session == null || !App.session.isConnected()) {
+            startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
+        } else {
+            onLogged();
+        }
     }
 
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // TODO Auto-generated method stub
@@ -149,6 +186,10 @@ public class SSHExplorerActivity extends Activity {
             stopService(intent);
             finish();
             return true;
+        }
+        if (item.getItemId() == R.id.login) {
+            startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
+            
         }
         return false;
     }
@@ -235,15 +276,19 @@ public class SSHExplorerActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_LOGIN) {
-            m_currentPath = "foo";
-            try {
-                m_fs = new SSHFileSystem(App.session);
-                ls();
-            } catch (JSchException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                error(e.getMessage());
-            }
+            m_currentPath = data.getStringExtra("path");
+            onLogged();
+        }
+    }
+
+    private void onLogged() {
+        try {
+            m_fs = new SSHFileSystem(App.session);
+            ls();
+        } catch (JSchException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            error(e.getMessage());
         }
     }
 

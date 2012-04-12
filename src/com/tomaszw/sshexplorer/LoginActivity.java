@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
@@ -22,6 +21,7 @@ public class LoginActivity extends Activity implements OnClickListener {
     private EditText m_editHost;
     private EditText m_editUser;
     private EditText m_editPassword;
+    private EditText m_editRemotePath;
     private Button m_btnLogin;
 
     @Override
@@ -32,6 +32,12 @@ public class LoginActivity extends Activity implements OnClickListener {
         m_editHost = (EditText) findViewById(R.id.editHost);
         m_editUser = (EditText) findViewById(R.id.editUser);
         m_editPassword = (EditText) findViewById(R.id.editPassword);
+        m_editRemotePath = (EditText) findViewById(R.id.editRemotePath);
+        
+        View[] views = { m_editHost, m_editUser, m_editPassword, m_editRemotePath };
+        for (View v : views) {
+            App.kbhide(v);
+        }
         m_btnLogin = (Button) findViewById(R.id.loginBtn);
         m_btnLogin.setOnClickListener(this);
         setLogin(new Login());
@@ -47,6 +53,7 @@ public class LoginActivity extends Activity implements OnClickListener {
         m_editHost.setText(l.host);
         m_editUser.setText(l.user);
         m_editPassword.setText(l.pass);
+        m_editRemotePath.setText(l.path);
     }
 
     private void fillLogin(Login l) {
@@ -54,6 +61,7 @@ public class LoginActivity extends Activity implements OnClickListener {
         l.user = ((EditText) findViewById(R.id.editUser)).getText().toString();
         l.pass = ((EditText) findViewById(R.id.editPassword)).getText()
                 .toString();
+        l.path = m_editRemotePath.getText().toString();
     }
 
     @Override
@@ -165,6 +173,7 @@ public class LoginActivity extends Activity implements OnClickListener {
             if (m_connected) {
                 Intent data = new Intent();
                 // data.putExtra("login", getLogin());
+                data.putExtra("path", getLogin().path);
                 setResult(RESULT_OK, data);
                 finish();
             }
