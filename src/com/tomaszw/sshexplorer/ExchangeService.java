@@ -24,7 +24,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class ExchangeService extends Service {
-    public static final int BUFFER_SIZE = 65536;
+    public static final int BUFFER_SIZE = 32768 * 4;
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
     private NotificationManager m_notifyManager;
@@ -219,7 +219,7 @@ public class ExchangeService extends Service {
                     entry.downloaded = totalDone;
                     time = System.currentTimeMillis();
                     double dt = (double) (time - timeLoBound) / 1000;
-                    if (dt >= 2) {
+                    if (dt >= 1) {
                         timeLoBound = time;
                         publishProgress(dt);
                     }
@@ -281,7 +281,7 @@ public class ExchangeService extends Service {
             }
             long p = Math.round(progress * 100);
             downloadNotification("", String.format(
-                    "Transferring files (%d/%d): %d%%, %.1f kbps", m_ptr + 1,
+                    "Transferring files (%d/%d): %d%%, %.1f kB/s", m_ptr + 1,
                     m_entries.size(), p, kbps));
             m_lastDownloaded = done;
             Log.d(App.TAG, "progress " + p + "%");

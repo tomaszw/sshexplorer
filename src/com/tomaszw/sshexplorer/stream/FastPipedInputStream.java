@@ -2,6 +2,11 @@ package com.tomaszw.sshexplorer.stream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
+
+import android.util.Log;
+
+import com.tomaszw.sshexplorer.App;
 
 
 /**
@@ -48,7 +53,7 @@ public class FastPipedInputStream extends InputStream
 
     public FastPipedInputStream(FastPipedOutputStream source)
             throws IOException {
-        this(source, 0x10000);
+        this(source, 0x40000);
     }
 
     /**
@@ -153,6 +158,8 @@ public class FastPipedInputStream extends InputStream
      */
 
     public int read(byte[] b, int off, int len) throws IOException {
+//        len = Math.min(len, b.length-off);
+        
         if (source == null) {
             throw new IOException("Unconnected pipe");
         }
@@ -166,11 +173,13 @@ public class FastPipedInputStream extends InputStream
                 // Wait for any writer to put something in the circular buffer.
 
                 try {
+                    //App.d("i+");
                     buffer.wait();
+                    //App.d("i-");
                 }
 
                 catch (InterruptedException e) {
-                    throw new IOException(e.getMessage());
+                    throw new InterruptedIOException(e.getMessage());
                 }
 
                 // Try again.
@@ -185,7 +194,7 @@ public class FastPipedInputStream extends InputStream
             int amount = Math.min(len,
                     (writePosition > readPosition ? writePosition
                             : buffer.length) - readPosition);
-
+            //Log.d(App.TAG, "--> read ="+amount);
             System.arraycopy(buffer, readPosition, b, off, amount);
             readPosition += amount;
 
@@ -198,15 +207,12 @@ public class FastPipedInputStream extends InputStream
 
             // The buffer is only released when the complete desired block was
             // obtained.
-
+            buffer.notifyAll();
             if (amount < len) {
                 int second = read(b, off + amount, len - amount);
 
                 return second == -1 ? amount : amount + second;
-            } else {
-                buffer.notifyAll();
-            }
-
+            } 
             return amount;
         }
     }

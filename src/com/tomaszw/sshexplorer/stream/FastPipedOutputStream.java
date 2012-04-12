@@ -1,7 +1,12 @@
 package com.tomaszw.sshexplorer.stream;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
+
+import android.util.Log;
+
+import com.tomaszw.sshexplorer.App;
 
 
 /**
@@ -115,6 +120,8 @@ public class FastPipedOutputStream extends OutputStream
      */
 
     public void write(byte[] b, int off, int len) throws IOException {
+//        len = Math.min(len, b.length-off);
+
         if (sink == null) {
             throw new IOException("Unconnected pipe");
         }
@@ -131,11 +138,13 @@ public class FastPipedOutputStream extends OutputStream
                 // something.
 
                 try {
+                    //App.d("o+");
                     sink.buffer.wait();
+                    //App.d("o-");
                 }
 
                 catch (InterruptedException e) {
-                    throw new IOException(e.getMessage());
+                    throw new InterruptedIOException(e.getMessage());
                 }
 
                 // Try again.
@@ -151,6 +160,7 @@ public class FastPipedOutputStream extends OutputStream
             int amount = Math.min(len,
                     (sink.writePosition < sink.readPosition ? sink.readPosition
                             : sink.buffer.length) - sink.writePosition);
+            //Log.d(App.TAG, "write ="+amount + " len="+len);
 
             System.arraycopy(b, off, sink.buffer, sink.writePosition, amount);
             sink.writePosition += amount;
@@ -163,10 +173,9 @@ public class FastPipedOutputStream extends OutputStream
             // The buffer is only released when the complete desired block was
             // written.
 
+            sink.buffer.notifyAll();
             if (amount < len) {
                 write(b, off + amount, len - amount);
-            } else {
-                sink.buffer.notifyAll();
             }
         }
     }

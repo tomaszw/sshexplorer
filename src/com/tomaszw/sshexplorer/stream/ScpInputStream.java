@@ -71,6 +71,7 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
             length = (int) (m_header.sz - m_totalRead);
         }
         int r = m_in.read(buffer, offset, length);
+        //Log.d(App.TAG, "read " + r);
         if (r > 0) {
             m_totalRead += r;
             if (m_totalRead >= m_header.sz) {
