@@ -35,8 +35,9 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
-import com.tomaszw.sshexplorer.stream.FastPipedInputStream;
-import com.tomaszw.sshexplorer.stream.FastPipedOutputStream;
+import org.idempotentimplements.sshexplorer.stream.FastPipedInputStream;
+import org.idempotentimplements.sshexplorer.stream.FastPipedOutputStream;
+
 
 
 public abstract class Channel implements Runnable{

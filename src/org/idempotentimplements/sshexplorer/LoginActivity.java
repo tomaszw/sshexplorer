@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import java.net.UnknownHostException;
 
@@ -16,6 +16,7 @@ import android.widget.EditText;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+import org.idempotentimplements.sshexplorer.R;
 
 public class LoginActivity extends Activity implements OnClickListener {
     private EditText m_editHost;

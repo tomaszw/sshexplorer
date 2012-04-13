@@ -1,12 +1,13 @@
-package com.tomaszw.sshexplorer.stream;
+package org.idempotentimplements.sshexplorer.stream;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 
+import org.idempotentimplements.sshexplorer.App;
+
 import android.util.Log;
 
-import com.tomaszw.sshexplorer.App;
 
 
 /**

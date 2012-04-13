@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer.stream;
+package org.idempotentimplements.sshexplorer.stream;
 
 public interface ProvidesStreamSize {
     public long streamSize();

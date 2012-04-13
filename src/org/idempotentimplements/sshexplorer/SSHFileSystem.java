@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,13 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import org.idempotentimplements.sshexplorer.stream.ScpInputStream;
+
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
-import com.tomaszw.sshexplorer.stream.ScpInputStream;
 
 public class SSHFileSystem implements FileSystem {
     private Session m_session;

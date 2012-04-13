@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import android.app.Activity;
 import android.app.AlertDialog;

@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import android.os.Parcel;
 import android.os.Parcelable;

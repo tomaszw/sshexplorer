@@ -1,16 +1,17 @@
-package com.tomaszw.sshexplorer.stream;
+package org.idempotentimplements.sshexplorer.stream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.idempotentimplements.sshexplorer.App;
+
 import android.util.Log;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import com.tomaszw.sshexplorer.App;
 
 public class ScpInputStream extends InputStream implements ProvidesStreamSize {
     private Session m_session;

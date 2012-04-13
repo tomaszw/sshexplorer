@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,7 +9,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.tomaszw.sshexplorer.stream.ProvidesStreamSize;
+import org.idempotentimplements.sshexplorer.stream.ProvidesStreamSize;
+
+import org.idempotentimplements.sshexplorer.R;
 
 import android.app.Notification;
 import android.app.NotificationManager;

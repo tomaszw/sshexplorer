@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer.stream;
+package org.idempotentimplements.sshexplorer.stream;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

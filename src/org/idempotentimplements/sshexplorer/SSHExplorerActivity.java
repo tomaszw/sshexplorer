@@ -1,4 +1,4 @@
-package com.tomaszw.sshexplorer;
+package org.idempotentimplements.sshexplorer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.idempotentimplements.sshexplorer.stream.ProvidesStreamSize;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -35,7 +37,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 import com.jcraft.jsch.JSchException;
-import com.tomaszw.sshexplorer.stream.ProvidesStreamSize;
+import org.idempotentimplements.sshexplorer.R;
 
 public class SSHExplorerActivity extends Activity {
     public static final int REQ_LOGIN = 0;
