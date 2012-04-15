@@ -254,19 +254,7 @@ public class SSHExplorerActivity extends Activity {
                 }
                 return null;
             }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                App.d("cd done, listing");
-                ls();
-            }
         }.execute(new Void[] {});
-
-        try {
-            cd(fs().upPath(getCurrentPath()));
-        } catch (IOException e) {
-            error(e);
-        }
     }
 
     private boolean currentPathEmpty() {
