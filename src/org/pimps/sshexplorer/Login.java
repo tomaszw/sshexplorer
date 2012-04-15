@@ -1,4 +1,4 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

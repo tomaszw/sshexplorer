@@ -1,10 +1,10 @@
-package org.idempotentimplements.sshexplorer.stream;
+package org.pimps.sshexplorer.stream;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 
-import org.idempotentimplements.sshexplorer.App;
+import org.pimps.sshexplorer.App;
 
 import android.util.Log;
 

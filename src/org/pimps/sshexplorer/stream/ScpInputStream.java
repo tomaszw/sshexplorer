@@ -1,11 +1,11 @@
-package org.idempotentimplements.sshexplorer.stream;
+package org.pimps.sshexplorer.stream;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.idempotentimplements.sshexplorer.App;
+import org.pimps.sshexplorer.App;
 
 import android.util.Log;
 

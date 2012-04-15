@@ -35,8 +35,8 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
-import org.idempotentimplements.sshexplorer.stream.FastPipedInputStream;
-import org.idempotentimplements.sshexplorer.stream.FastPipedOutputStream;
+import org.pimps.sshexplorer.stream.FastPipedInputStream;
+import org.pimps.sshexplorer.stream.FastPipedOutputStream;
 
 
 

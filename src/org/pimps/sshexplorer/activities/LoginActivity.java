@@ -1,10 +1,16 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer.activities;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
+
+import org.pimps.sshexplorer.App;
+import org.pimps.sshexplorer.ExchangeService;
+import org.pimps.sshexplorer.Login;
+import org.pimps.sshexplorer.R;
+import org.pimps.sshexplorer.Util;
 
 import android.app.Activity;
 import android.app.ProgressDialog;

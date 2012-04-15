@@ -1,4 +1,4 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.idempotentimplements.sshexplorer.stream.ProvidesStreamSize;
+import org.pimps.sshexplorer.activities.SSHExplorerActivity;
+import org.pimps.sshexplorer.stream.ProvidesStreamSize;
 
 import android.app.Notification;
 import android.app.NotificationManager;

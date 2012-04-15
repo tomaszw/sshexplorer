@@ -1,8 +1,16 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer.activities;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.pimps.sshexplorer.App;
+import org.pimps.sshexplorer.ExchangeService;
+import org.pimps.sshexplorer.FileEntry;
+import org.pimps.sshexplorer.FileListAdapter;
+import org.pimps.sshexplorer.FileSystem;
+import org.pimps.sshexplorer.R;
+import org.pimps.sshexplorer.Util;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -23,8 +31,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.EditText;

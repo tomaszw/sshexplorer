@@ -1,4 +1,4 @@
-package org.idempotentimplements.sshexplorer.stream;
+package org.pimps.sshexplorer.stream;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import org.idempotentimplements.sshexplorer.stream.ScpInputStream;
+import org.pimps.sshexplorer.stream.ScpInputStream;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;

@@ -1,4 +1,4 @@
-package org.idempotentimplements.sshexplorer;
+package org.pimps.sshexplorer;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
