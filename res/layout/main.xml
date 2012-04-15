@@ -39,10 +39,11 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/darker_gray"
-        android:paddingBottom="2dip"
+        android:paddingBottom="8dip"
         android:paddingLeft="40dip"
         android:paddingRight="40dip"
-        android:paddingTop="6dip" >
+        android:paddingTop="8dip"
+         >
 
         <Button
             android:id="@+id/fileHomeBtn"
@@ -80,7 +81,6 @@
         android:layout_height="wrap_content"
         android:choiceMode="none"
         android:clickable="false"
-        android:divider="@android:color/transparent"
         android:scrollbars="vertical"
         android:focusable="false" >
     </ListView>

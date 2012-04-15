@@ -8,6 +8,7 @@ import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.opengl.Visibility;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -116,28 +117,29 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         box.setClickable(false);
         text.setFocusable(false);
         image.setFocusable(false);
-        
-        if (e.dir) {
-            box.setEnabled(false);
-        }
+
         text.setText(e.name);
         if (e.dir) {
-            text.setTextColor(Color.BLUE);
-            box.setButtonDrawable(android.R.color.transparent);
+            box.setEnabled(false);
+            box.setVisibility(View.INVISIBLE);
+            text.setTextColor(Color.rgb(0x50, 0x50, 0xFF));
             image.setImageResource(R.drawable.ic_launcher_folder);
         } else {
+            box.setVisibility(View.VISIBLE);
+            box.setEnabled(true);
+            image.setImageResource(R.drawable.ic_launcher_file);
             int p = e.perms;
             if ((p & 0111) != 0) {
                 text.setTextColor(Color.GREEN);
+            } else {
+                text.setTextColor(Color.WHITE);
             }
         }
 
         final int idx = m_filtered.get(position);
         m_boxes.put(idx, box);
         box.setChecked(m_checked.contains(idx));
-
         box.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
-
             @Override
             public void onCheckedChanged(CompoundButton buttonView,
                     boolean isChecked) {
