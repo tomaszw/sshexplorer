@@ -249,9 +249,10 @@ public class ExchangeService extends Service {
                             cutFileName(e.filePath)).getAbsolutePath();
                     scpFrom(e, dst);
                     ++m_ptr;
-                } catch (IOException ex) {
+                } catch (Throwable ex) {
                     ex.printStackTrace();
                     synchronized (m_entries) {
+                        App.d("xfer error");
                         downloadNotification("Transfer error", ex.getMessage());
                         m_ptr = -1;
                         m_entries.clear();

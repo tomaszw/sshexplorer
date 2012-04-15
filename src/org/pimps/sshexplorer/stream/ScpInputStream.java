@@ -28,17 +28,36 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
         public long sz;
     }
 
+    private String escapePath(String p) {
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < p.length(); ++i) {
+            switch (p.charAt(i)) {
+            case '"':
+                b.append("\\\"");
+                break;
+            default:
+                b.append(p.charAt(i));
+                break;
+            }
+        }
+        return b.toString();
+    }
+
     public ScpInputStream(Session s, String path) throws IOException {
         m_session = s;
         m_path = path;
         try {
             m_channel = (ChannelExec) m_session.openChannel("exec");
-            m_channel.setCommand("scp -f " + path);
-            //m_channel.set
+            String cmd = "scp -f -- \"" + escapePath(path) + "\"";
+            App.d("sending command: " + cmd);
+            m_channel.setCommand(cmd);
+            // m_channel.set
             m_out = m_channel.getOutputStream();
             m_in = m_channel.getInputStream();
             m_channel.connect();
             m_ch = new byte[1];
+            assertHeader();
+            
         } catch (JSchException e) {
             throw new IOException(e);
         }
@@ -47,9 +66,18 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
     @Override
     public void close() throws IOException {
         // TODO Auto-generated method stub
-        m_channel.disconnect();
-        m_in.close();
-        m_out.close();
+        try {
+            m_channel.disconnect();
+        } catch (Throwable t) {
+        }
+        try {
+            m_in.close();
+        } catch (Throwable t) {
+        }
+        try {
+            m_out.close();
+        } catch (Throwable t) {
+        }
     }
 
     @Override
@@ -72,7 +100,7 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
             length = (int) (m_header.sz - m_totalRead);
         }
         int r = m_in.read(buffer, offset, length);
-        //Log.d(App.TAG, "read " + r);
+        // Log.d(App.TAG, "read " + r);
         if (r > 0) {
             m_totalRead += r;
             if (m_totalRead >= m_header.sz) {
@@ -123,7 +151,7 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
 
         int c = checkAck(in);
         if (c != 'C') {
-            throw new IOException("Invalid header 1");
+            throw new IOException("Invalid header 1 " + c);
         }
 
         // read '0644 '
