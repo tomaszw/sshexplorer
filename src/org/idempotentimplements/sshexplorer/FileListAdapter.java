@@ -5,17 +5,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.Inflater;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -67,9 +66,9 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
     public void setChecked(int position, boolean v) {
         int p = m_filtered.get(position);
         if (m_checked.contains(p) && !v) {
-            m_checked.remove((Object)p);
+            m_checked.remove((Object) p);
         } else if (!m_checked.contains(p) && v) {
-            m_checked.add((Integer)p);
+            m_checked.add((Integer) p);
         }
         CheckBox box = m_boxes.get(p);
         if (box != null)
@@ -100,39 +99,36 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
 
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
+        View view;
         FileEntry e = getItem(position);
+        if (convertView == null) {
+            view = LayoutInflater.from(getContext()).inflate(
+                    R.layout.filelistitem, null);
+        } else {
+            view = convertView;
+        }
 
-        RelativeLayout l = new RelativeLayout(m_context);
-        RelativeLayout.LayoutParams params;
-        l.setFocusable(false);
+        CheckBox box = (CheckBox) view.findViewById(R.id.check);
+        TextView text = (TextView) view.findViewById(R.id.itemtext);
+        ImageView image = (ImageView) view.findViewById(R.id.itemimg);
 
-        final CheckBox box = new CheckBox(m_context);
         box.setFocusable(false);
-        box.setFocusableInTouchMode(false);
-        box.setId(1);
+        box.setClickable(false);
+        text.setFocusable(false);
+        image.setFocusable(false);
+        
         if (e.dir) {
             box.setEnabled(false);
         }
-        l.addView(box);
-        l.setClickable(false);
-        TextView v = new TextView(m_context);
-        v.setFocusable(false);
-
-        params = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.RIGHT_OF, 1);
-        params.addRule(RelativeLayout.CENTER_VERTICAL);
-        l.addView(v, params);
-        v.setText(e.name);
-        // v.setClickable(true);
+        text.setText(e.name);
         if (e.dir) {
-            v.setTextColor(Color.BLUE);
+            text.setTextColor(Color.BLUE);
             box.setButtonDrawable(android.R.color.transparent);
+            image.setImageResource(R.drawable.ic_launcher_folder);
         } else {
             int p = e.perms;
             if ((p & 0111) != 0) {
-                v.setTextColor(Color.GREEN);
+                text.setTextColor(Color.GREEN);
             }
         }
 
@@ -152,6 +148,6 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
                 }
             }
         });
-        return l;
+        return view;
     }
 }
