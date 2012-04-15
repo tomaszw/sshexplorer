@@ -209,7 +209,9 @@ public class ExchangeService extends Service {
         private boolean m_running;
         private int m_ptr = -1;
         private long m_lastDownloaded = -1;
-
+        private double m_lastKbps = -1;
+        private int m_speedBacklog = 5;
+        
         public DownloadTask() {
             m_running = true;
         }
@@ -360,6 +362,11 @@ public class ExchangeService extends Service {
                 double bps = doneDelta / dt;
                 kbps = bps / 1024;
             }
+            if (m_lastKbps >= 0) {
+                kbps = (m_lastKbps+kbps)/2;
+                m_lastKbps = kbps;
+            }
+            
             long p = Math.round(progress * 100);
             downloadNotification("", String.format(
                     "Transferred files (%d/%d): %d%%, %.1f kB/s", m_ptr,

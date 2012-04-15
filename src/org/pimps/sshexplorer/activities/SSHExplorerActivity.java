@@ -243,6 +243,25 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void cdUp() {
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    cd(fs().upPath(getCurrentPath()));
+                } catch (IOException e) {
+                    error(e);
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                App.d("cd done, listing");
+                ls();
+            }
+        }.execute(new Void[] {});
+
         try {
             cd(fs().upPath(getCurrentPath()));
         } catch (IOException e) {
@@ -281,7 +300,7 @@ public class SSHExplorerActivity extends Activity {
         super.onResume();
         App.d("resume");
     }
-    
+
     private void onLogged() {
         cd(getCurrentPath());
     }
