@@ -11,8 +11,6 @@ import java.util.List;
 
 import org.idempotentimplements.sshexplorer.stream.ProvidesStreamSize;
 
-import org.idempotentimplements.sshexplorer.R;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -25,8 +23,13 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.jcraft.jsch.Session;
+
 public class ExchangeService extends Service {
     public static final int BUFFER_SIZE = 32768 * 4;
+    public Session session;
+    public String currentPath = "";
+    
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
     private NotificationManager m_notifyManager;

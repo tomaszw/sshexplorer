@@ -4,9 +4,12 @@ import java.net.UnknownHostException;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -17,14 +20,17 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import org.idempotentimplements.sshexplorer.R;
+import org.idempotentimplements.sshexplorer.SSHExplorerActivity.ExchangeBridge;
 
-public class LoginActivity extends Activity implements OnClickListener {
+public class LoginActivity extends Activity implements OnClickListener, ServiceConnection {
     private EditText m_editHost;
     private EditText m_editUser;
     private EditText m_editPassword;
     private EditText m_editRemotePath;
     private Button m_btnLogin;
-
+    private ExchangeBridge m_exchangeBridge;
+    private ExchangeService m_exchangeService;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
@@ -80,6 +86,41 @@ public class LoginActivity extends Activity implements OnClickListener {
 
     private void error(final String m) {
         Util.errorText(this, m);
+    }
+
+    @Override
+    protected void onStart() {
+        // TODO Auto-generated method stub
+        super.onStart();
+
+        Intent intent = new Intent(LoginActivity.this,
+                ExchangeService.class);
+        bindService(intent, this, 0);// Service.BIND_AUTO_CREATE);
+        startService(intent);
+    }
+
+    @Override
+    protected void onStop() {
+        // TODO Auto-generated method stub
+        super.onStop();
+        if (m_exchangeBridge != null) {
+            unbindService(m_exchangeBridge);
+        }
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // TODO Auto-generated method stub
+        m_exchangeService = ((ExchangeService.ExchangeBinder) service)
+                .service();
+        Log.d(App.TAG, "service connected");
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        // TODO Auto-generated method stub
+        m_exchangeService = null;
+
     }
 
     class LoginTask extends AsyncTask<Void, Void, Void> {
@@ -144,7 +185,7 @@ public class LoginActivity extends Activity implements OnClickListener {
                 session.setConfig("compression.s2c", "none");
                 session.setConfig("compression.c2s", "none");
                 session.rekey();
-                App.session = session;
+                m_exchangeService.session = session;
                 m_connected = true;
             } catch (Exception e) {
                 e.printStackTrace();

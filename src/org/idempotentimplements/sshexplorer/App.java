@@ -7,7 +7,6 @@ import android.widget.EditText;
 import com.jcraft.jsch.Session;
 
 public class App extends Application {
-    public static Session session;
     public static final String TAG = "ssh-explorer";
 
     public static final void d(String m) {

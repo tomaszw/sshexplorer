@@ -9,6 +9,7 @@ import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.inputmethodservice.Keyboard.Key;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -35,7 +36,6 @@ public class SSHExplorerActivity extends Activity {
     private ListView m_fileListView;
     private EditText m_fileFilterEdit;
     private FileSystem m_fs;
-    private String m_currentPath = "";
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
     private TextView m_filePathText;
@@ -44,14 +44,23 @@ public class SSHExplorerActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         // TODO Auto-generated method stub
         super.onSaveInstanceState(outState);
+        App.d("saving instance state");
         outState.putString("path", getCurrentPath());
     }
 
     private void restore(Bundle s) {
+        App.d("restoring instance state");
         // TODO Auto-generated method stub
         setCurrentPath(s.getString("path"));
     }
 
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        // TODO Auto-generated method stub
+        super.onRestoreInstanceState(savedInstanceState);
+        restore(savedInstanceState);
+    }
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -139,13 +148,8 @@ public class SSHExplorerActivity extends Activity {
                 });
 
         if (savedInstanceState != null) {
+            App.d("restoring instance state!");
             restore(savedInstanceState);
-        }
-        if (App.session == null || !App.session.isConnected()) {
-            startActivityForResult(new Intent(this, LoginActivity.class),
-                    REQ_LOGIN);
-        } else {
-            onLogged();
         }
     }
 
@@ -259,7 +263,7 @@ public class SSHExplorerActivity extends Activity {
 
     private void cdUp() {
         try {
-            cd(m_fs.upPath(m_currentPath));
+            cd(m_fs.upPath(getCurrentPath()));
         } catch (IOException e) {
             error(e);
         }
@@ -279,7 +283,7 @@ public class SSHExplorerActivity extends Activity {
 
     private void onLogged() {
         try {
-            m_fs = new SSHFileSystem(App.session);
+            m_fs = new SSHFileSystem(m_exchangeService.session);
             cd(getCurrentPath());
         } catch (JSchException e) {
             // TODO Auto-generated catch block
@@ -296,7 +300,7 @@ public class SSHExplorerActivity extends Activity {
     protected void onStart() {
         // TODO Auto-generated method stub
         super.onStart();
-
+        App.d("start");
         m_exchangeBridge = new ExchangeBridge();
         Intent intent = new Intent(SSHExplorerActivity.this,
                 ExchangeService.class);
@@ -308,6 +312,7 @@ public class SSHExplorerActivity extends Activity {
     protected void onStop() {
         // TODO Auto-generated method stub
         super.onStop();
+        App.d("stop");
         if (m_exchangeBridge != null) {
             unbindService(m_exchangeBridge);
         }
@@ -326,7 +331,7 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void setCurrentPath(String currentPath) {
-        m_currentPath = currentPath;
+        m_exchangeService.currentPath = currentPath;
         m_filePathText.setText(currentPath);
     }
 
@@ -340,7 +345,7 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private String getCurrentPath() {
-        return m_currentPath;
+        return m_exchangeService.currentPath;
     }
 
     class ExchangeBridge implements ServiceConnection {
@@ -350,6 +355,13 @@ public class SSHExplorerActivity extends Activity {
             m_exchangeService = ((ExchangeService.ExchangeBinder) service)
                     .service();
             Log.d(App.TAG, "service connected");
+            if (m_exchangeService.session == null || !m_exchangeService.session.isConnected()) {
+                startActivityForResult(new Intent(SSHExplorerActivity.this, LoginActivity.class),
+                        REQ_LOGIN);
+            } else {
+                onLogged();
+            }
+
         }
 
         @Override
