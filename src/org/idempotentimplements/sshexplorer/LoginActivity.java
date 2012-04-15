@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
@@ -48,9 +49,10 @@ public class LoginActivity extends Activity implements OnClickListener,
         m_btnLogin.setOnClickListener(this);
         Login l = new Login();
         try {
-            FileInputStream f = new FileInputStream("login.dat");
+            FileInputStream f = openFileInput("login.dat");
             l.readFromFile(f);
             f.close();
+            App.d("login read");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -82,10 +84,9 @@ public class LoginActivity extends Activity implements OnClickListener,
     public void onClick(View v) {
         if (v == m_btnLogin) {
             Login l = getLogin();
-            login(l);
             FileOutputStream f;
             try {
-                f = new FileOutputStream("login.dat");
+                f = openFileOutput("login.dat", Context.MODE_PRIVATE);
                 try {
                     l.writeToFile(f);
                 } catch (IOException e) {
@@ -101,6 +102,7 @@ public class LoginActivity extends Activity implements OnClickListener,
                 // TODO Auto-generated catch block
                 ex.printStackTrace();
             }
+            login(l);
         }
     }
 
