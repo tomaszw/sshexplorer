@@ -108,7 +108,7 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
             view = convertView;
         }
 
-        CheckBox box = (CheckBox) view.findViewById(R.id.check);
+        CheckBox box = (CheckBox) view.findViewById(R.id.itemcheck);
         TextView text = (TextView) view.findViewById(R.id.itemtext);
         ImageView image = (ImageView) view.findViewById(R.id.itemimg);
 

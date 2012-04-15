@@ -10,7 +10,7 @@
         android:src="@drawable/ic_launcher_file" />
 
     <CheckBox
-        android:id="@+id/check"
+        android:id="@+id/itemcheck"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true" />
