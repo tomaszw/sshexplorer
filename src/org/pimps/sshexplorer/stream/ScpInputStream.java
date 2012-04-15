@@ -123,18 +123,18 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
 
         int c = checkAck(in);
         if (c != 'C') {
-            throw new IOException("Invalid header");
+            throw new IOException("Invalid header 1");
         }
 
         // read '0644 '
         if (readN(in, buf, 0, 5) < 0) {
-            throw new IOException("Invalid header");
+            throw new IOException("Invalid header 2");
         }
 
         long filesize = 0L;
         while (true) {
             if (in.read(buf, 0, 1) < 0) {
-                throw new IOException("Invalid header");
+                throw new IOException("Invalid header 3");
             }
             if (buf[0] == ' ')
                 break;
@@ -144,7 +144,7 @@ public class ScpInputStream extends InputStream implements ProvidesStreamSize {
         String file = null;
         for (int i = 0;; i++) {
             if (in.read(buf, i, 1) < 0) {
-                throw new IOException("Invalid header");
+                throw new IOException("Invalid header 4");
             }
             if (buf[i] == (byte) 0x0a) {
                 file = new String(buf, 0, i);

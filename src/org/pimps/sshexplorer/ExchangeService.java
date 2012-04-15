@@ -43,7 +43,7 @@ public class ExchangeService extends Service {
     public interface PasswordPrompter {
         public String promptPassword();
     }
-    
+
     @Override
     public void onCreate() {
         // TODO Auto-generated method stub
@@ -60,7 +60,8 @@ public class ExchangeService extends Service {
         return m_fs;
     }
 
-    public void login(final Login data, final PasswordPrompter pp) throws Exception {
+    public void login(final Login data, final PasswordPrompter pp)
+            throws Exception {
         // TODO Auto-generated method stub
         JSch jsch = new JSch();
         Session session = jsch.getSession(data.user, data.host, 22);
@@ -211,7 +212,7 @@ public class ExchangeService extends Service {
         private long m_lastDownloaded = -1;
         private double m_lastKbps = -1;
         private int m_speedBacklog = 5;
-        
+
         public DownloadTask() {
             m_running = true;
         }
@@ -219,6 +220,7 @@ public class ExchangeService extends Service {
         @Override
         protected void onCancelled() {
             // TODO Auto-generated method stub
+            App.d("cancelling download task");
             m_running = false;
             super.onCancelled();
         }
@@ -273,57 +275,61 @@ public class ExchangeService extends Service {
             FileSystem fs = entry.filesystem;
             Log.d(App.TAG, "size (estimate 1) = " + entry.size);
             InputStream in = fs.input(srcPath);
-            /* better size estimate if supported */
-            if (in instanceof ProvidesStreamSize) {
-                entry.size = ((ProvidesStreamSize) in).streamSize();
-                Log.d(App.TAG, "size (estimate 2) = " + entry.size);
-            }
-
-            long totalSize = entry.size;
-            byte[] buf = new byte[BUFFER_SIZE];
-            OutputStream fos = new FileOutputStream(dstPath);
-            long totalDone = 0;
-            long timeLoBound = System.currentTimeMillis();
-            long time = timeLoBound;
             try {
-                while (totalDone < totalSize) {
-                    if (!m_running) {
-                        break;
-                    }
-                    int r = in.read(buf);
-                    if (r < 0) {
-                        // eof
-                        break;
-                    }
-                    fos.write(buf, 0, r);
-
-                    // Log.d(App.TAG, "read " + r + " bytes");
-                    totalDone += r;
-                    entry.downloaded = totalDone;
-                    time = System.currentTimeMillis();
-                    double dt = (double) (time - timeLoBound) / 1000;
-                    if (dt >= 1) {
-                        timeLoBound = time;
-                        publishProgress(dt);
-                    }
+                /* better size estimate if supported */
+                if (in instanceof ProvidesStreamSize) {
+                    entry.size = ((ProvidesStreamSize) in).streamSize();
+                    Log.d(App.TAG, "size (estimate 2) = " + entry.size);
                 }
-            } catch (InterruptedIOException ex) {
-                // cancel likely
-            } finally {
+
+                long totalSize = entry.size;
+                byte[] buf = new byte[BUFFER_SIZE];
+                OutputStream fos = new FileOutputStream(dstPath);
+                long totalDone = 0;
+                long timeLoBound = System.currentTimeMillis();
+                long time = timeLoBound;
                 try {
-                    fos.close();
-                } catch (Throwable e) {
-                }
+                    while (totalDone < totalSize) {
+                        if (!m_running) {
+                            break;
+                        }
+                        int r = in.read(buf);
+                        if (r < 0) {
+                            // eof
+                            break;
+                        }
+                        fos.write(buf, 0, r);
 
-                fos = null;
-            }
-            if (totalDone < totalSize) {
-                Log.e(App.TAG, "only " + totalDone + " bytes read out of "
-                        + totalSize);
-                // remove partial file
-                new File(dstPath).delete();
-            } else {
-                Log.d(App.TAG, "done " + totalDone + " bytes");
+                        // Log.d(App.TAG, "read " + r + " bytes");
+                        totalDone += r;
+                        entry.downloaded = totalDone;
+                        time = System.currentTimeMillis();
+                        double dt = (double) (time - timeLoBound) / 1000;
+                        if (dt >= 1) {
+                            timeLoBound = time;
+                            publishProgress(dt);
+                        }
+                    }
+                } catch (InterruptedIOException ex) {
+                    // cancel likely
+                } finally {
+                    try {
+                        fos.close();
+                    } catch (Throwable e) {
+                    }
+
+                    fos = null;
+                }
+                if (totalDone < totalSize) {
+                    Log.e(App.TAG, "only " + totalDone + " bytes read out of "
+                            + totalSize);
+                    // remove partial file
+                    new File(dstPath).delete();
+                } else {
+                    Log.d(App.TAG, "done " + totalDone + " bytes");
+                }
+            } finally {
+                in.close();
             }
         }
 
@@ -363,10 +369,10 @@ public class ExchangeService extends Service {
                 kbps = bps / 1024;
             }
             if (m_lastKbps >= 0) {
-                kbps = (m_lastKbps+kbps)/2;
+                kbps = (m_lastKbps + kbps) / 2;
                 m_lastKbps = kbps;
             }
-            
+
             long p = Math.round(progress * 100);
             downloadNotification("", String.format(
                     "Transferred files (%d/%d): %d%%, %.1f kB/s", m_ptr,
