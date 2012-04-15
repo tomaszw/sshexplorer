@@ -12,7 +12,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Login implements Parcelable {
-	public String host, user, pass, path;
+	public String host="", user="", pass="", path="";
 	public Login() {
 	}
 	@Override
