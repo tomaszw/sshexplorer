@@ -5,10 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.Inflater;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -52,6 +54,29 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         notifyDataSetChanged();
     }
 
+    public void toggle(int position) {
+        setChecked(position, !getChecked(position));
+        int p = m_filtered.get(position);
+    }
+
+    public boolean getChecked(int position) {
+        int p = m_filtered.get(position);
+        return m_checked.contains(p);
+    }
+
+    public void setChecked(int position, boolean v) {
+        int p = m_filtered.get(position);
+        if (m_checked.contains(p) && !v) {
+            m_checked.remove((Integer)p);
+        } else if (!m_checked.contains(p) && v) {
+            m_checked.add((Integer)p);
+        }
+        CheckBox box = m_boxes.get(p);
+        if (box != null)
+            box.setChecked(v);
+
+    }
+
     @Override
     public FileEntry getItem(int position) {
         // TODO Auto-generated method stub
@@ -69,10 +94,7 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
     public void clearCheck(FileEntry e) {
         int i = m_values.indexOf(e);
         if (i != -1) {
-            CheckBox box = m_boxes.get(i);
-            if (box != null) {
-                box.setChecked(false);
-            }
+            setChecked(i, false);
         }
     }
 
@@ -103,7 +125,7 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
         params.addRule(RelativeLayout.CENTER_VERTICAL);
         l.addView(v, params);
         v.setText(e.name);
-        //v.setClickable(true);
+        // v.setClickable(true);
         if (e.dir) {
             v.setTextColor(Color.BLUE);
             box.setButtonDrawable(android.R.color.transparent);
@@ -114,29 +136,9 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
             }
         }
 
-        /* checkbox listener */
         final int idx = m_filtered.get(position);
         m_boxes.put(idx, box);
         box.setChecked(m_checked.contains(idx));
-        /*
-        if (!e.dir) {
-            v.setOnClickListener(new CheckBox.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    App.d("item click!");
-                    // TODO Auto-generated method stub
-                    boolean isChecked = !m_checked.contains(idx);
-                    box.setChecked(isChecked);
-                    if (isChecked) {
-                        m_checked.add(idx);
-                    } else {
-                        boolean removed = m_checked.remove((Object) idx);
-                    }
-
-                }
-            });
-        }*/
 
         box.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
 

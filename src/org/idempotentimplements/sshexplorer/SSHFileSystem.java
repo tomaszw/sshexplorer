@@ -27,7 +27,24 @@ public class SSHFileSystem implements FileSystem {
         m_sftpChannel = (ChannelSftp) channel;
 
     }
+    
+    @Override
+    public String upPath(String path) throws IOException {
+        // TODO Auto-generated method stub
+        return normPath(path + "/..");
+    }
 
+    @Override
+    public String normPath(String path) throws IOException {
+        // TODO Auto-generated method stub
+        try {
+            m_sftpChannel.cd(path);
+            return m_sftpChannel.pwd();
+        } catch (SftpException e) {
+            throw new IOException(e);
+        }
+    }
+    
     @Override
     public List<FileEntry> entries(String path) throws IOException {
         if (path.equals(""))

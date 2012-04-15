@@ -109,19 +109,19 @@ public class ExchangeService extends Service {
         }
     }
 
-    class DownloadEntry {
-        public FileSystem filesystem;
-        public String filePath;
-        public long downloaded;
-        public long size;
-    }
-
     private String cutFileName(String path) {
         int i = path.lastIndexOf('/');
         if (i < 0) {
             return path;
         }
         return path.substring(i + 1);
+    }
+
+    class DownloadEntry {
+        public FileSystem filesystem;
+        public String filePath;
+        public long downloaded;
+        public long size;
     }
 
     class DownloadTask extends AsyncTask<Void, Double, Void> {

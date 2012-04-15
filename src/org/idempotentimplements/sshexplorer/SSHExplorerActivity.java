@@ -1,43 +1,34 @@
 package org.idempotentimplements.sshexplorer;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.idempotentimplements.sshexplorer.stream.ProvidesStreamSize;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.jcraft.jsch.JSchException;
-import org.idempotentimplements.sshexplorer.R;
 
 public class SSHExplorerActivity extends Activity {
     public static final int REQ_LOGIN = 0;
@@ -47,42 +38,41 @@ public class SSHExplorerActivity extends Activity {
     private String m_currentPath = "";
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
+    private TextView m_filePathText;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         // TODO Auto-generated method stub
         super.onSaveInstanceState(outState);
-        outState.putString("path", m_currentPath);
+        outState.putString("path", getCurrentPath());
     }
-    
+
     private void restore(Bundle s) {
         // TODO Auto-generated method stub
-        m_currentPath = s.getString("path");
+        setCurrentPath(s.getString("path"));
     }
-    
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        m_filePathText = (TextView) findViewById(R.id.filePathText);
         m_fileFilterEdit = (EditText) findViewById(R.id.fileFilterEdit);
-        App.kbhide(m_fileFilterEdit);
-/*        
-        m_fileFilterEdit.setOnFocusChangeListener(new EditText.OnFocusChangeListener() {
-            
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                // TODO Auto-generated method stub
-                if (!hasFocus) {
-                    InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(m_fileFilterEdit.getWindowToken(), 0);
-                }
-                
-            }
-        });
-  */      
+        Util.focusKbHide(m_fileFilterEdit);
+        /*
+         * m_fileFilterEdit.setOnFocusChangeListener(new
+         * EditText.OnFocusChangeListener() {
+         * 
+         * @Override public void onFocusChange(View v, boolean hasFocus) { //
+         * TODO Auto-generated method stub if (!hasFocus) { InputMethodManager
+         * imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+         * imm.hideSoftInputFromWindow(m_fileFilterEdit.getWindowToken(), 0); }
+         * 
+         * } });
+         */
         m_fileFilterEdit.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -109,7 +99,7 @@ public class SSHExplorerActivity extends Activity {
         });
 
         m_fileListView = (ListView) findViewById(R.id.fileListView);
-        m_fileListView.setSelector(android.R.color.transparent);
+        //m_fileListView.setSelector(android.R.color.transparent);
         registerForContextMenu(m_fileListView);
         /*
          * m_fileListView .setOnItemLongClickListener(new
@@ -152,13 +142,13 @@ public class SSHExplorerActivity extends Activity {
             restore(savedInstanceState);
         }
         if (App.session == null || !App.session.isConnected()) {
-            startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
+            startActivityForResult(new Intent(this, LoginActivity.class),
+                    REQ_LOGIN);
         } else {
             onLogged();
         }
     }
 
-    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // TODO Auto-generated method stub
@@ -190,12 +180,13 @@ public class SSHExplorerActivity extends Activity {
             return true;
         }
         if (item.getItemId() == R.id.login) {
-            startActivityForResult(new Intent(this, LoginActivity.class), REQ_LOGIN);
-            
+            startActivityForResult(new Intent(this, LoginActivity.class),
+                    REQ_LOGIN);
+
         }
         return false;
     }
-    
+
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.downloadSelected) {
@@ -222,6 +213,28 @@ public class SSHExplorerActivity extends Activity {
         if (e.dir) {
             pushPath(e.name);
             ls();
+        } else {
+            FileListAdapter a = (FileListAdapter)m_fileListView.getAdapter();
+            a.toggle(position);
+        }
+    }
+
+    public void onFileHomeClick(View v) {
+        setCurrentPath("");
+        ls();
+    }
+
+    public void onFileUpClick(View v) {
+        if (m_fs == null)
+            return;
+
+        try {
+            setCurrentPath(m_fs.upPath(getCurrentPath()));
+            ls();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            error(e);
         }
     }
 
@@ -242,6 +255,7 @@ public class SSHExplorerActivity extends Activity {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (!currentPathEmpty()) {
                 popPath();
+                ls();
                 return true;
             }
         }
@@ -251,34 +265,33 @@ public class SSHExplorerActivity extends Activity {
 
     private void pushPath(String seg) {
         if (currentPathEmpty()) {
-            m_currentPath = seg;
-        } else if (m_currentPath.endsWith("/")) {
-            m_currentPath += seg;
+            setCurrentPath(seg);
+        } else if (getCurrentPath().endsWith("/")) {
+            setCurrentPath(getCurrentPath() + seg);
         } else {
-            m_currentPath += "/" + seg;
+            setCurrentPath(getCurrentPath() + ("/" + seg));
         }
     }
 
     private void popPath() {
         if (currentPathEmpty())
             return;
-        int i = m_currentPath.lastIndexOf('/');
+        int i = getCurrentPath().lastIndexOf('/');
         if (i != -1) {
-            m_currentPath = m_currentPath.substring(0, i);
+            setCurrentPath(getCurrentPath().substring(0, i));
         } else {
-            m_currentPath = "";
+            setCurrentPath("");
         }
-        ls();
     }
 
     private boolean currentPathEmpty() {
-        return m_currentPath == null || m_currentPath.equals("");
+        return getCurrentPath() == null || getCurrentPath().equals("");
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_LOGIN) {
-            m_currentPath = data.getStringExtra("path");
+            setCurrentPath(data.getStringExtra("path"));
             onLogged();
         }
     }
@@ -290,12 +303,12 @@ public class SSHExplorerActivity extends Activity {
         } catch (JSchException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            error(e.getMessage());
+            error(e);
         }
     }
 
-    private void error(final String m) {
-        App.error(this, m);
+    private void error(Throwable e) {
+        Util.error(this, e);
     }
 
     @Override
@@ -306,7 +319,7 @@ public class SSHExplorerActivity extends Activity {
         m_exchangeBridge = new ExchangeBridge();
         Intent intent = new Intent(SSHExplorerActivity.this,
                 ExchangeService.class);
-        bindService(intent, m_exchangeBridge, 0);//Service.BIND_AUTO_CREATE);
+        bindService(intent, m_exchangeBridge, 0);// Service.BIND_AUTO_CREATE);
         startService(intent);
     }
 
@@ -328,7 +341,26 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void ls() {
-        new LsTask(m_currentPath).execute(null);
+        new LsTask(getCurrentPath()).execute(null);
+    }
+
+    private void setCurrentPath(String currentPath) {
+        //if (m_fs == null) {
+            m_currentPath = currentPath;
+        /*} else {
+            try {
+                m_currentPath = m_fs.normPath(currentPath);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                error(e);
+                e.printStackTrace();
+            }
+        }*/
+        m_filePathText.setText(currentPath);
+    }
+
+    private String getCurrentPath() {
+        return m_currentPath;
     }
 
     class ExchangeBridge implements ServiceConnection {
@@ -362,7 +394,7 @@ public class SSHExplorerActivity extends Activity {
                 return m_fs.entries(m_path);
             } catch (IOException e) {
                 e.printStackTrace();
-                error(e.getMessage());
+                error(e);
                 return new ArrayList<FileEntry>();
             }
         }

@@ -37,7 +37,7 @@ public class LoginActivity extends Activity implements OnClickListener {
         
         View[] views = { m_editHost, m_editUser, m_editPassword, m_editRemotePath };
         for (View v : views) {
-            App.kbhide(v);
+            Util.focusKbHide(v);
         }
         m_btnLogin = (Button) findViewById(R.id.loginBtn);
         m_btnLogin.setOnClickListener(this);
@@ -79,7 +79,7 @@ public class LoginActivity extends Activity implements OnClickListener {
     }
 
     private void error(final String m) {
-        App.error(this, m);
+        Util.errorText(this, m);
     }
 
     class LoginTask extends AsyncTask<Void, Void, Void> {
