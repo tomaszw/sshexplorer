@@ -1,5 +1,9 @@
 package org.idempotentimplements.sshexplorer;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 import android.app.Activity;
@@ -16,20 +20,15 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.UserInfo;
-import org.idempotentimplements.sshexplorer.R;
-import org.idempotentimplements.sshexplorer.SSHExplorerActivity.ExchangeBridge;
-
-public class LoginActivity extends Activity implements OnClickListener, ServiceConnection {
+public class LoginActivity extends Activity implements OnClickListener,
+        ServiceConnection {
     private EditText m_editHost;
     private EditText m_editUser;
     private EditText m_editPassword;
     private EditText m_editRemotePath;
     private Button m_btnLogin;
     private ExchangeService m_exchangeService;
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // TODO Auto-generated method stub
@@ -39,14 +38,23 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
         m_editUser = (EditText) findViewById(R.id.editUser);
         m_editPassword = (EditText) findViewById(R.id.editPassword);
         m_editRemotePath = (EditText) findViewById(R.id.editRemotePath);
-        
-        View[] views = { m_editHost, m_editUser, m_editPassword, m_editRemotePath };
+
+        View[] views = { m_editHost, m_editUser, m_editPassword,
+                m_editRemotePath };
         for (View v : views) {
             Util.focusKbHide(v);
         }
         m_btnLogin = (Button) findViewById(R.id.loginBtn);
         m_btnLogin.setOnClickListener(this);
-        setLogin(new Login());
+        Login l = new Login();
+        try {
+            FileInputStream f = new FileInputStream("login.dat");
+            l.readFromFile(f);
+            f.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        setLogin(l);
     }
 
     public Login getLogin() {
@@ -73,7 +81,26 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
     @Override
     public void onClick(View v) {
         if (v == m_btnLogin) {
-            login(getLogin());
+            Login l = getLogin();
+            login(l);
+            FileOutputStream f;
+            try {
+                f = new FileOutputStream("login.dat");
+                try {
+                    l.writeToFile(f);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        f.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (FileNotFoundException ex) {
+                // TODO Auto-generated catch block
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -92,8 +119,7 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
         // TODO Auto-generated method stub
         super.onStart();
 
-        Intent intent = new Intent(LoginActivity.this,
-                ExchangeService.class);
+        Intent intent = new Intent(LoginActivity.this, ExchangeService.class);
         bindService(intent, this, 0);// Service.BIND_AUTO_CREATE);
         startService(intent);
     }
@@ -132,7 +158,7 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                m_exchangeService.login(m_data);
+                m_exchangeService.login(m_data, null);
                 m_connected = true;
             } catch (Exception e) {
                 e.printStackTrace();

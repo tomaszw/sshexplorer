@@ -25,13 +25,10 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
     private List<Integer> m_filtered;
     private Map<Integer, CheckBox> m_boxes = new HashMap<Integer, CheckBox>();
 
-    private Context m_context;
-
     public FileListAdapter(Context c, List<FileEntry> values) {
         super(c, android.R.layout.simple_list_item_checked, android.R.id.text1);
         m_values = new ArrayList<FileEntry>(values);
         Collections.sort(m_values, new FileEntryComparator());
-        m_context = c;
         m_filtered = new ArrayList<Integer>();
         for (int i = 0; i < m_values.size(); ++i) {
             m_filtered.add(i);

@@ -1,15 +1,19 @@
 package org.idempotentimplements.sshexplorer;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+
 import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Login implements Parcelable {
 	public String host, user, pass, path;
 	public Login() {
-		host = "192.168.1.100";
-		user = "tomaszw";
-		pass = "a1l2v3a4";
-		path = "";
 	}
 	@Override
 	public int describeContents() {
@@ -23,6 +27,27 @@ public class Login implements Parcelable {
         d.writeString(path);
 		d.writeString(pass);
 		// TODO Auto-generated method stub
+	}
+	
+	public void writeToFile(OutputStream out) throws IOException {
+	    BufferedWriter w = new BufferedWriter(new PrintWriter(out));
+	    w.write(host);
+	    w.write('\n');
+	    w.write(user);
+        w.write('\n');
+	    w.write(pass);
+        w.write('\n');
+	    w.write(path);
+        w.write('\n');
+	    w.flush();
+	}
+
+	public void readFromFile(InputStream in) throws IOException {
+	    BufferedReader r = new BufferedReader(new InputStreamReader(in));
+	    host = r.readLine();
+	    user = r.readLine();
+	    pass = r.readLine();
+	    path = r.readLine();
 	}
 	
 	public static Creator<Login> CREATOR = new Creator<Login>() {

@@ -40,6 +40,10 @@ public class ExchangeService extends Service {
     private static int DOWNLOAD_ID = 1;
     private IBinder m_binder = new ExchangeBinder();
 
+    public interface PasswordPrompter {
+        public String promptPassword();
+    }
+    
     @Override
     public void onCreate() {
         // TODO Auto-generated method stub
@@ -56,7 +60,7 @@ public class ExchangeService extends Service {
         return m_fs;
     }
 
-    public void login(final Login data) throws Exception {
+    public void login(final Login data, final PasswordPrompter pp) throws Exception {
         // TODO Auto-generated method stub
         JSch jsch = new JSch();
         Session session = jsch.getSession(data.user, data.host, 22);
@@ -89,7 +93,10 @@ public class ExchangeService extends Service {
             @Override
             public String getPassword() {
                 // TODO Auto-generated method stub
-                return data.pass;
+                if (data.pass != null) {
+                    return data.pass;
+                }
+                return pp.promptPassword();
             }
 
             @Override
@@ -355,7 +362,7 @@ public class ExchangeService extends Service {
             }
             long p = Math.round(progress * 100);
             downloadNotification("", String.format(
-                    "Transferring files (%d/%d): %d%%, %.1f kB/s", m_ptr + 1,
+                    "Transferred files (%d/%d): %d%%, %.1f kB/s", m_ptr,
                     m_entries.size(), p, kbps));
             m_lastDownloaded = done;
             Log.d(App.TAG, "progress " + p + "%");
