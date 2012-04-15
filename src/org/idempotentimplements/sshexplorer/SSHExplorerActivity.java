@@ -40,27 +40,6 @@ public class SSHExplorerActivity extends Activity {
     private ExchangeBridge m_exchangeBridge;
     private TextView m_filePathText;
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        // TODO Auto-generated method stub
-        super.onSaveInstanceState(outState);
-        App.d("saving instance state");
-        outState.putString("path", getCurrentPath());
-    }
-
-    private void restore(Bundle s) {
-        App.d("restoring instance state");
-        // TODO Auto-generated method stub
-        setCurrentPath(s.getString("path"));
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        // TODO Auto-generated method stub
-        super.onRestoreInstanceState(savedInstanceState);
-        restore(savedInstanceState);
-    }
-    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -71,17 +50,6 @@ public class SSHExplorerActivity extends Activity {
         m_filePathText = (TextView) findViewById(R.id.filePathText);
         m_fileFilterEdit = (EditText) findViewById(R.id.fileFilterEdit);
         Util.focusKbHide(m_fileFilterEdit);
-        /*
-         * m_fileFilterEdit.setOnFocusChangeListener(new
-         * EditText.OnFocusChangeListener() {
-         * 
-         * @Override public void onFocusChange(View v, boolean hasFocus) { //
-         * TODO Auto-generated method stub if (!hasFocus) { InputMethodManager
-         * imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-         * imm.hideSoftInputFromWindow(m_fileFilterEdit.getWindowToken(), 0); }
-         * 
-         * } });
-         */
         m_fileFilterEdit.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -108,16 +76,9 @@ public class SSHExplorerActivity extends Activity {
         });
 
         m_fileListView = (ListView) findViewById(R.id.fileListView);
+        m_fileListView.requestFocus();
         // m_fileListView.setSelector(android.R.color.transparent);
         registerForContextMenu(m_fileListView);
-        /*
-         * m_fileListView .setOnItemLongClickListener(new
-         * ListView.OnItemLongClickListener() {
-         * 
-         * @Override public boolean onItemLongClick(AdapterView<?> parent, View
-         * view, int position, long id) { doItemLongClick(position); return
-         * false; } });
-         */
         m_fileListView
                 .setOnItemSelectedListener(new ListView.OnItemSelectedListener() {
 
@@ -146,11 +107,6 @@ public class SSHExplorerActivity extends Activity {
 
                     }
                 });
-
-        if (savedInstanceState != null) {
-            App.d("restoring instance state!");
-            restore(savedInstanceState);
-        }
     }
 
     @Override
@@ -212,18 +168,16 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void doItemClick(int position) {
-        //if (position < m_fileListView.getCount()) {
-            Log.d(App.TAG, "click " + position);
-            FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(
-                    position);
-            if (e.dir) {
-                cdInCurrent(e.name);
-            } else {
-                FileListAdapter a = (FileListAdapter) m_fileListView
-                        .getAdapter();
-                a.toggle(position);
-            }
-        //}
+        // if (position < m_fileListView.getCount()) {
+        Log.d(App.TAG, "click " + position);
+        FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
+        if (e.dir) {
+            cdInCurrent(e.name);
+        } else {
+            FileListAdapter a = (FileListAdapter) m_fileListView.getAdapter();
+            a.toggle(position);
+        }
+        // }
     }
 
     public void onFileHomeClick(View v) {
@@ -237,14 +191,6 @@ public class SSHExplorerActivity extends Activity {
     private void doItemSelected(int position) {
         Log.d(App.TAG, "selected " + position);
     }
-
-    /*
-     * private void doItemLongClick(int position) { Log.d(TAG, "long click " +
-     * position); // TODO Auto-generated method stub
-     * 
-     * FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
-     * if (!e.dir) { download(e); } }
-     */
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -355,9 +301,10 @@ public class SSHExplorerActivity extends Activity {
             m_exchangeService = ((ExchangeService.ExchangeBinder) service)
                     .service();
             Log.d(App.TAG, "service connected");
-            if (m_exchangeService.session == null || !m_exchangeService.session.isConnected()) {
-                startActivityForResult(new Intent(SSHExplorerActivity.this, LoginActivity.class),
-                        REQ_LOGIN);
+            if (m_exchangeService.session == null
+                    || !m_exchangeService.session.isConnected()) {
+                startActivityForResult(new Intent(SSHExplorerActivity.this,
+                        LoginActivity.class), REQ_LOGIN);
             } else {
                 onLogged();
             }

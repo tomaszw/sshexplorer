@@ -28,7 +28,6 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
     private EditText m_editPassword;
     private EditText m_editRemotePath;
     private Button m_btnLogin;
-    private ExchangeBridge m_exchangeBridge;
     private ExchangeService m_exchangeService;
     
     @Override
@@ -103,9 +102,7 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
     protected void onStop() {
         // TODO Auto-generated method stub
         super.onStop();
-        if (m_exchangeBridge != null) {
-            unbindService(m_exchangeBridge);
-        }
+        unbindService(this);
     }
 
     @Override
@@ -134,58 +131,8 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
 
         @Override
         protected Void doInBackground(Void... params) {
-            // TODO Auto-generated method stub
-            JSch jsch = new JSch();
             try {
-                Session session = jsch.getSession(m_data.user, m_data.host, 22);
-                session.setUserInfo(new UserInfo() {
-
-                    @Override
-                    public void showMessage(String arg0) {
-                        // TODO Auto-generated method stub
-
-                    }
-
-                    @Override
-                    public boolean promptYesNo(String arg0) {
-                        // TODO Auto-generated method stub
-                        return true;
-                    }
-
-                    @Override
-                    public boolean promptPassword(String arg0) {
-                        // TODO Auto-generated method stub
-                        return true;
-                    }
-
-                    @Override
-                    public boolean promptPassphrase(String arg0) {
-                        // TODO Auto-generated method stub
-                        return false;
-                    }
-
-                    @Override
-                    public String getPassword() {
-                        // TODO Auto-generated method stub
-                        return m_data.pass;
-                    }
-
-                    @Override
-                    public String getPassphrase() {
-                        // TODO Auto-generated method stub
-                        return null;
-                    }
-                });
-                
-                Log.d(App.TAG, "establishing session");
-                session.connect();
-                // rekey for scp performance
-                session.setConfig("cipher.s2c", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
-                session.setConfig("cipher.c2s", "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
-                session.setConfig("compression.s2c", "none");
-                session.setConfig("compression.c2s", "none");
-                session.rekey();
-                m_exchangeService.session = session;
+                m_exchangeService.login(m_data);
                 m_connected = true;
             } catch (Exception e) {
                 e.printStackTrace();

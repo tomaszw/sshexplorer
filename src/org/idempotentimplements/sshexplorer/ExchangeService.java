@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,13 +24,15 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+import com.jcraft.jsch.UserInfo;
 
 public class ExchangeService extends Service {
     public static final int BUFFER_SIZE = 32768 * 4;
     public Session session;
     public String currentPath = "";
-    
+
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
     private DownloadTask m_dltask = null;
     private NotificationManager m_notifyManager;
@@ -42,6 +45,62 @@ public class ExchangeService extends Service {
         super.onCreate();
         Log.d(App.TAG, "created");
         m_notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    public void login(final Login data) throws Exception {
+        // TODO Auto-generated method stub
+        JSch jsch = new JSch();
+        Session session = jsch.getSession(data.user, data.host, 22);
+        session.setUserInfo(new UserInfo() {
+
+            @Override
+            public void showMessage(String arg0) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public boolean promptYesNo(String arg0) {
+                // TODO Auto-generated method stub
+                return true;
+            }
+
+            @Override
+            public boolean promptPassword(String arg0) {
+                // TODO Auto-generated method stub
+                return true;
+            }
+
+            @Override
+            public boolean promptPassphrase(String arg0) {
+                // TODO Auto-generated method stub
+                return false;
+            }
+
+            @Override
+            public String getPassword() {
+                // TODO Auto-generated method stub
+                return data.pass;
+            }
+
+            @Override
+            public String getPassphrase() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+        });
+
+        Log.d(App.TAG, "establishing session");
+        session.connect();
+        // rekey for scp performance
+        session.setConfig("cipher.s2c",
+                "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
+        session.setConfig("cipher.c2s",
+                "arcfour,aes128-cbc,blowfish-cbc,3des-cbc");
+        session.setConfig("compression.s2c", "none");
+        session.setConfig("compression.c2s", "none");
+        session.rekey();
+        this.session = session;
     }
 
     private void downloadNotification(String tickerText, String contentText) {
