@@ -156,7 +156,7 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
 
         @Override
         protected void onPostExecute(Void result) {
-            if (m_progress != null) {
+            if (m_progress != null && m_progress.isShowing()) {
                 m_progress.dismiss();
             }
             if (m_connected) {

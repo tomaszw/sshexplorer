@@ -35,7 +35,7 @@ public class SSHFileSystem implements FileSystem {
     }
 
     @Override
-    public String normPath(String path) throws IOException {
+    public synchronized String normPath(String path) throws IOException {
         // TODO Auto-generated method stub
         try {
             if (path == null || path.trim().equals("")) {
@@ -53,7 +53,7 @@ public class SSHFileSystem implements FileSystem {
     }
 
     @Override
-    public List<FileEntry> entries(String path) throws IOException {
+    public synchronized List<FileEntry> entries(String path) throws IOException {
         if (path.equals(""))
             path = ".";
         // TODO Auto-generated method stub

@@ -9,7 +9,7 @@ import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.inputmethodservice.Keyboard.Key;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -23,13 +23,13 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import com.jcraft.jsch.JSchException;
 
 public class SSHExplorerActivity extends Activity {
     public static final int REQ_LOGIN = 0;
@@ -38,6 +38,7 @@ public class SSHExplorerActivity extends Activity {
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
     private TextView m_filePathText;
+    private View m_contentView;
 
     /** Called when the activity is first created. */
     @Override
@@ -46,6 +47,9 @@ public class SSHExplorerActivity extends Activity {
         App.d("create");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        m_contentView = this.findViewById(android.R.id.content);
+        m_contentView.setVisibility(View.INVISIBLE);
+
         m_filePathText = (TextView) findViewById(R.id.filePathText);
         m_fileFilterEdit = (EditText) findViewById(R.id.fileFilterEdit);
         Util.focusKbHide(m_fileFilterEdit);
@@ -106,13 +110,19 @@ public class SSHExplorerActivity extends Activity {
 
                     }
                 });
-        
+
         m_exchangeBridge = new ExchangeBridge();
         Intent intent = new Intent(SSHExplorerActivity.this,
                 ExchangeService.class);
         bindService(intent, m_exchangeBridge, 0);// Service.BIND_AUTO_CREATE);
         startService(intent);
-        
+
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        // TODO Auto-generated method stub
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -200,6 +210,15 @@ public class SSHExplorerActivity extends Activity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            String p = getCurrentPath();
+            if (p == null || p.equals("/")) {
+                //
+            } else {
+                cdUp();
+                return true;
+            }
+        }
         return super.onKeyDown(keyCode, event);
     }
 
@@ -232,8 +251,21 @@ public class SSHExplorerActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_LOGIN) {
-            setCurrentPath(data.getStringExtra("path"));
-            onLogged();
+            if (resultCode == RESULT_OK) {
+                App.d("login OK");
+                if (m_contentView != null) {
+                    m_contentView.setVisibility(View.VISIBLE);
+                }
+                setCurrentPath(data.getStringExtra("path"));
+                onLogged();
+            } else {
+                if (m_exchangeService != null
+                        && m_exchangeService.isRemoteConnected()) {
+                    onLogged();
+                } else {
+                    finish();
+                }
+            }
         }
     }
 
@@ -246,20 +278,6 @@ public class SSHExplorerActivity extends Activity {
     }
 
     @Override
-    protected void onStart() {
-        // TODO Auto-generated method stub
-        App.d("start");
-        super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        // TODO Auto-generated method stub
-        App.d("stop");
-        super.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         // TODO Auto-generated method stub
         App.d("destroy");
@@ -268,7 +286,7 @@ public class SSHExplorerActivity extends Activity {
         }
         super.onDestroy();
     }
-    
+
     private void download(FileEntry e) {
         if (m_exchangeService != null) {
             m_exchangeService.download(fs(), e.fullname(), e.size);
@@ -281,22 +299,45 @@ public class SSHExplorerActivity extends Activity {
         new LsTask(getCurrentPath()).execute(null);
     }
 
-    private void setCurrentPath(String currentPath) {
-        m_exchangeService.currentPath = currentPath;
-        m_filePathText.setText(currentPath);
-    }
+    private void cd(final String path) {
+        new AsyncTask<Void, Void, Void>() {
 
-    private void cd(String path) {
-        try {
-            setCurrentPath(fs().normPath(path));
-            ls();
-        } catch (IOException e) {
-            error(e);
-        }
+            @Override
+            protected Void doInBackground(Void... params) {
+                // TODO Auto-generated method stub
+                try {
+                    String p = fs().normPath(path);
+                    App.d("cd " + p);
+                    setCurrentPath(p);
+                } catch (IOException e) {
+                    error(e);
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result) {
+                App.d("cd done, listing");
+                ls();
+            }
+        }.execute(new Void[] {});
     }
 
     private String getCurrentPath() {
+        if (m_exchangeService == null)
+            return null;
         return m_exchangeService.currentPath;
+    }
+
+    private void setCurrentPath(final String currentPath) {
+        m_exchangeService.currentPath = currentPath;
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                m_filePathText.setText(currentPath);
+            }
+        });
     }
 
     class ExchangeBridge implements ServiceConnection {
@@ -311,6 +352,7 @@ public class SSHExplorerActivity extends Activity {
                 startActivityForResult(new Intent(SSHExplorerActivity.this,
                         LoginActivity.class), REQ_LOGIN);
             } else {
+                m_contentView.setVisibility(View.VISIBLE);
                 App.d("remote is connected");
                 onLogged();
             }
@@ -354,7 +396,9 @@ public class SSHExplorerActivity extends Activity {
 
         @Override
         protected void onPostExecute(List<FileEntry> values) {
-            m_progress.dismiss();
+            if (m_progress.isShowing()) {
+                m_progress.dismiss();
+            }
             FileListAdapter adapter = new FileListAdapter(
                     SSHExplorerActivity.this, values);
             m_fileListView.setAdapter(adapter);
