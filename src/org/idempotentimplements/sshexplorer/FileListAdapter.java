@@ -67,7 +67,7 @@ public class FileListAdapter extends ArrayAdapter<FileEntry> {
     public void setChecked(int position, boolean v) {
         int p = m_filtered.get(position);
         if (m_checked.contains(p) && !v) {
-            m_checked.remove((Integer)p);
+            m_checked.remove((Object)p);
         } else if (!m_checked.contains(p) && v) {
             m_checked.add((Integer)p);
         }

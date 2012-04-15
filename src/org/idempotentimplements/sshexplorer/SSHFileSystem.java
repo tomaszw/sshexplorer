@@ -27,7 +27,7 @@ public class SSHFileSystem implements FileSystem {
         m_sftpChannel = (ChannelSftp) channel;
 
     }
-    
+
     @Override
     public String upPath(String path) throws IOException {
         // TODO Auto-generated method stub
@@ -38,13 +38,20 @@ public class SSHFileSystem implements FileSystem {
     public String normPath(String path) throws IOException {
         // TODO Auto-generated method stub
         try {
+            if (path == null || path.trim().equals("")) {
+                String home = m_sftpChannel.getHome();
+                path = home;
+                App.d("home=" + home);
+            }
+            
+            App.d("normPath " + path + " len=" + path.length());
             m_sftpChannel.cd(path);
             return m_sftpChannel.pwd();
         } catch (SftpException e) {
             throw new IOException(e);
         }
     }
-    
+
     @Override
     public List<FileEntry> entries(String path) throws IOException {
         if (path.equals(""))
@@ -55,23 +62,22 @@ public class SSHFileSystem implements FileSystem {
         try {
             v = m_sftpChannel.ls(path);
         } catch (SftpException ex) {
-            throw(new IOException(ex));
+            throw (new IOException(ex));
         }
         for (Object o : v) {
             if (o instanceof LsEntry) {
                 LsEntry e = (LsEntry) o;
-                if (e.getFilename().equals(".")
-                        || e.getFilename().equals("..")) {
+                if (e.getFilename().equals(".") || e.getFilename().equals("..")) {
                     continue;
                 }
-                
+
                 String epath = path.equals(".") ? "" : path;
                 values.add(FileEntry.fromLsEntry(path, e));
             }
         }
         return values;
     }
-    
+
     @Override
     public InputStream input(String path) throws IOException {
         return new ScpInputStream(m_session, path);

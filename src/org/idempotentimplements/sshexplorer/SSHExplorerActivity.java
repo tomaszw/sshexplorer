@@ -99,7 +99,7 @@ public class SSHExplorerActivity extends Activity {
         });
 
         m_fileListView = (ListView) findViewById(R.id.fileListView);
-        //m_fileListView.setSelector(android.R.color.transparent);
+        // m_fileListView.setSelector(android.R.color.transparent);
         registerForContextMenu(m_fileListView);
         /*
          * m_fileListView .setOnItemLongClickListener(new
@@ -208,34 +208,26 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void doItemClick(int position) {
-        Log.d(App.TAG, "click " + position);
-        FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(position);
-        if (e.dir) {
-            pushPath(e.name);
-            ls();
-        } else {
-            FileListAdapter a = (FileListAdapter)m_fileListView.getAdapter();
-            a.toggle(position);
-        }
+        //if (position < m_fileListView.getCount()) {
+            Log.d(App.TAG, "click " + position);
+            FileEntry e = (FileEntry) m_fileListView.getAdapter().getItem(
+                    position);
+            if (e.dir) {
+                cdInCurrent(e.name);
+            } else {
+                FileListAdapter a = (FileListAdapter) m_fileListView
+                        .getAdapter();
+                a.toggle(position);
+            }
+        //}
     }
 
     public void onFileHomeClick(View v) {
-        setCurrentPath("");
-        ls();
+        cd("");
     }
 
     public void onFileUpClick(View v) {
-        if (m_fs == null)
-            return;
-
-        try {
-            setCurrentPath(m_fs.upPath(getCurrentPath()));
-            ls();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            error(e);
-        }
+        cdUp();
     }
 
     private void doItemSelected(int position) {
@@ -252,35 +244,24 @@ public class SSHExplorerActivity extends Activity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (!currentPathEmpty()) {
-                popPath();
-                ls();
-                return true;
-            }
-        }
-        // TODO Auto-generated method stub
         return super.onKeyDown(keyCode, event);
     }
 
-    private void pushPath(String seg) {
+    private void cdInCurrent(String seg) {
         if (currentPathEmpty()) {
-            setCurrentPath(seg);
+            cd(seg);
         } else if (getCurrentPath().endsWith("/")) {
-            setCurrentPath(getCurrentPath() + seg);
+            cd(getCurrentPath() + seg);
         } else {
-            setCurrentPath(getCurrentPath() + ("/" + seg));
+            cd(getCurrentPath() + ("/" + seg));
         }
     }
 
-    private void popPath() {
-        if (currentPathEmpty())
-            return;
-        int i = getCurrentPath().lastIndexOf('/');
-        if (i != -1) {
-            setCurrentPath(getCurrentPath().substring(0, i));
-        } else {
-            setCurrentPath("");
+    private void cdUp() {
+        try {
+            cd(m_fs.upPath(m_currentPath));
+        } catch (IOException e) {
+            error(e);
         }
     }
 
@@ -299,7 +280,7 @@ public class SSHExplorerActivity extends Activity {
     private void onLogged() {
         try {
             m_fs = new SSHFileSystem(App.session);
-            ls();
+            cd(getCurrentPath());
         } catch (JSchException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -345,18 +326,17 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void setCurrentPath(String currentPath) {
-        //if (m_fs == null) {
-            m_currentPath = currentPath;
-        /*} else {
-            try {
-                m_currentPath = m_fs.normPath(currentPath);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                error(e);
-                e.printStackTrace();
-            }
-        }*/
+        m_currentPath = currentPath;
         m_filePathText.setText(currentPath);
+    }
+
+    private void cd(String path) {
+        try {
+            setCurrentPath(m_fs.normPath(path));
+            ls();
+        } catch (IOException e) {
+            error(e);
+        }
     }
 
     private String getCurrentPath() {

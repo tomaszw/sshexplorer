@@ -27,6 +27,7 @@ public class Util {
 
     public static void error(final Activity activity, Throwable t) {
         while (t.getCause() != null) t = t.getCause();
+        t.printStackTrace();
         errorText(activity, t.getMessage());
     }
     

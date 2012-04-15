@@ -30,6 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_toLeftOf="@id/chooseLocalFolder"
             android:layout_toRightOf="@id/searchImg"
+            android:textSize="12dip"
             android:inputType="text"
             android:singleLine="true" />
     </RelativeLayout>
