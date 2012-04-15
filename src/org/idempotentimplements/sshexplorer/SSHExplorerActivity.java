@@ -269,6 +269,13 @@ public class SSHExplorerActivity extends Activity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        // TODO Auto-generated method stub
+        super.onResume();
+        App.d("resume");
+    }
+    
     private void onLogged() {
         cd(getCurrentPath());
     }
@@ -361,6 +368,7 @@ public class SSHExplorerActivity extends Activity {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
+            App.d("warning: service disconnected!");
             // TODO Auto-generated method stub
             m_exchangeService = null;
 
