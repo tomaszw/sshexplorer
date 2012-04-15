@@ -110,7 +110,7 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
         // TODO Auto-generated method stub
         m_exchangeService = ((ExchangeService.ExchangeBinder) service)
                 .service();
-        Log.d(App.TAG, "service connected");
+        Log.d(App.TAG, "login activity: service connected");
     }
 
     @Override

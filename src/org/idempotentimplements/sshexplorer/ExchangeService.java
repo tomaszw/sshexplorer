@@ -30,7 +30,8 @@ import com.jcraft.jsch.UserInfo;
 
 public class ExchangeService extends Service {
     public static final int BUFFER_SIZE = 32768 * 4;
-    public Session session;
+    private Session m_session;
+    private FileSystem m_fs;
     public String currentPath = "";
 
     private List<DownloadEntry> m_entries = new ArrayList<DownloadEntry>();
@@ -45,6 +46,14 @@ public class ExchangeService extends Service {
         super.onCreate();
         Log.d(App.TAG, "created");
         m_notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    public boolean isRemoteConnected() {
+        return m_session != null && m_session.isConnected();
+    }
+
+    public FileSystem filesystem() {
+        return m_fs;
     }
 
     public void login(final Login data) throws Exception {
@@ -100,7 +109,10 @@ public class ExchangeService extends Service {
         session.setConfig("compression.s2c", "none");
         session.setConfig("compression.c2s", "none");
         session.rekey();
-        this.session = session;
+        m_session = session;
+        App.d("logged in");
+        m_fs = new SSHFileSystem(m_session);
+        App.d("filesystem created");
     }
 
     private void downloadNotification(String tickerText, String contentText) {

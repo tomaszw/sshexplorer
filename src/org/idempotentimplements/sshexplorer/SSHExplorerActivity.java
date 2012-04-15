@@ -35,7 +35,6 @@ public class SSHExplorerActivity extends Activity {
     public static final int REQ_LOGIN = 0;
     private ListView m_fileListView;
     private EditText m_fileFilterEdit;
-    private FileSystem m_fs;
     private ExchangeService m_exchangeService;
     private ExchangeBridge m_exchangeBridge;
     private TextView m_filePathText;
@@ -44,7 +43,7 @@ public class SSHExplorerActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-
+        App.d("create");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         m_filePathText = (TextView) findViewById(R.id.filePathText);
@@ -107,6 +106,13 @@ public class SSHExplorerActivity extends Activity {
 
                     }
                 });
+        
+        m_exchangeBridge = new ExchangeBridge();
+        Intent intent = new Intent(SSHExplorerActivity.this,
+                ExchangeService.class);
+        bindService(intent, m_exchangeBridge, 0);// Service.BIND_AUTO_CREATE);
+        startService(intent);
+        
     }
 
     @Override
@@ -207,9 +213,13 @@ public class SSHExplorerActivity extends Activity {
         }
     }
 
+    private FileSystem fs() {
+        return m_exchangeService.filesystem();
+    }
+
     private void cdUp() {
         try {
-            cd(m_fs.upPath(getCurrentPath()));
+            cd(fs().upPath(getCurrentPath()));
         } catch (IOException e) {
             error(e);
         }
@@ -228,14 +238,7 @@ public class SSHExplorerActivity extends Activity {
     }
 
     private void onLogged() {
-        try {
-            m_fs = new SSHFileSystem(m_exchangeService.session);
-            cd(getCurrentPath());
-        } catch (JSchException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            error(e);
-        }
+        cd(getCurrentPath());
     }
 
     private void error(Throwable e) {
@@ -245,28 +248,30 @@ public class SSHExplorerActivity extends Activity {
     @Override
     protected void onStart() {
         // TODO Auto-generated method stub
-        super.onStart();
         App.d("start");
-        m_exchangeBridge = new ExchangeBridge();
-        Intent intent = new Intent(SSHExplorerActivity.this,
-                ExchangeService.class);
-        bindService(intent, m_exchangeBridge, 0);// Service.BIND_AUTO_CREATE);
-        startService(intent);
+        super.onStart();
     }
 
     @Override
     protected void onStop() {
         // TODO Auto-generated method stub
-        super.onStop();
         App.d("stop");
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        // TODO Auto-generated method stub
+        App.d("destroy");
         if (m_exchangeBridge != null) {
             unbindService(m_exchangeBridge);
         }
+        super.onDestroy();
     }
-
+    
     private void download(FileEntry e) {
         if (m_exchangeService != null) {
-            m_exchangeService.download(m_fs, e.fullname(), e.size);
+            m_exchangeService.download(fs(), e.fullname(), e.size);
         } else {
             Log.w(App.TAG, "download request but service is NULL");
         }
@@ -283,7 +288,7 @@ public class SSHExplorerActivity extends Activity {
 
     private void cd(String path) {
         try {
-            setCurrentPath(m_fs.normPath(path));
+            setCurrentPath(fs().normPath(path));
             ls();
         } catch (IOException e) {
             error(e);
@@ -300,12 +305,13 @@ public class SSHExplorerActivity extends Activity {
             // TODO Auto-generated method stub
             m_exchangeService = ((ExchangeService.ExchangeBinder) service)
                     .service();
-            Log.d(App.TAG, "service connected");
-            if (m_exchangeService.session == null
-                    || !m_exchangeService.session.isConnected()) {
+            App.d("ssh activity: service connected");
+            if (!m_exchangeService.isRemoteConnected()) {
+                App.d("remote is disconnected");
                 startActivityForResult(new Intent(SSHExplorerActivity.this,
                         LoginActivity.class), REQ_LOGIN);
             } else {
+                App.d("remote is connected");
                 onLogged();
             }
 
@@ -330,9 +336,8 @@ public class SSHExplorerActivity extends Activity {
         @Override
         protected List<FileEntry> doInBackground(Void... params) {
             try {
-                return m_fs.entries(m_path);
+                return fs().entries(m_path);
             } catch (IOException e) {
-                e.printStackTrace();
                 error(e);
                 return new ArrayList<FileEntry>();
             }
